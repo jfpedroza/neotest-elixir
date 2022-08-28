@@ -1,4 +1,5 @@
 local Path = require("plenary.path")
+local async = require("neotest.async")
 local lib = require("neotest.lib")
 local base = require("neotest-elixir.base")
 
@@ -25,6 +26,13 @@ local function get_args(position)
     return { position.path .. ":" .. line }
   end
 end
+
+local function script_path()
+  local str = debug.getinfo(2, "S").source:sub(2)
+  return str:match("(.*/)")
+end
+
+local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_elixir/neotest_formatter.exs").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
@@ -58,11 +66,11 @@ end
 ---@param args neotest.RunArgs
 ---@return neotest.RunSpec
 function ElixirNeotestAdapter.build_spec(args)
-  print("Called build_spec")
-
   local position = args.tree:data()
-  local command = vim.list_extend({ "mix", "test" }, get_args(position))
-  print("Position", vim.inspect(command))
+  local command = vim.list_extend(
+    { "elixir", "-r", exunit_formatter, "-S", "mix", "test", "--formatter", "NeotestElixirFormatter" },
+    get_args(position)
+  )
 
   return {
     command = command,
@@ -70,12 +78,29 @@ function ElixirNeotestAdapter.build_spec(args)
 end
 
 ---@async
----@param spec neotest.RunSpec
 ---@param result neotest.StrategyResult
 ---@return neotest.Result[]
-function ElixirNeotestAdapter.results(spec, result)
-  print(vim.inspect(result))
-  vim.cmd("vsplit " .. result.output)
+function ElixirNeotestAdapter.results(_, result)
+  local data = lib.files.read_lines(result.output)
+  local results = {}
+
+  for _, line in ipairs(data) do
+    local ok, decoded_result = pcall(vim.json.decode, line, { luanil = { object = true } })
+    if ok then
+      local output_path
+      if decoded_result.output then
+        output_path = async.fn.tempname()
+        Path:new(output_path):write(decoded_result.output, "w")
+      end
+
+      results[decoded_result.id] = {
+        status = decoded_result.status,
+        output = output_path,
+      }
+    end
+  end
+
+  return results
 end
 
 return ElixirNeotestAdapter
