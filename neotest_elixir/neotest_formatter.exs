@@ -5,8 +5,9 @@ defmodule NeotestElixirFormatter do
   use GenServer
 
   @impl true
-  def init(_opts) do
+  def init(opts) do
     config = %{
+      colors: colors(opts),
       failure_count: 0
     }
 
@@ -63,7 +64,13 @@ defmodule NeotestElixirFormatter do
   defp make_status(%ExUnit.Test{state: {:invalid, _}}), do: "failed"
 
   defp make_output(%ExUnit.Test{state: {:failed, failures}} = test, config) do
-    ExUnit.Formatter.format_test_failure(test, failures, config.failure_count, 80, &formatter/2)
+    ExUnit.Formatter.format_test_failure(
+      test,
+      failures,
+      config.failure_count,
+      80,
+      &formatter(&1, &2, config)
+    )
   end
 
   defp make_output(%ExUnit.Test{state: {:skipped, due_to}}, _config) do
@@ -76,7 +83,64 @@ defmodule NeotestElixirFormatter do
 
   defp make_output(%ExUnit.Test{}, _config), do: nil
 
-  defp formatter(_, msg) do
-    msg
+  # Color styles, copied from CLIFormatter
+
+  defp colorize(escape, string, %{colors: colors}) do
+    if colors[:enabled] do
+      [escape, string, :reset]
+      |> IO.ANSI.format_fragment(true)
+      |> IO.iodata_to_binary()
+    else
+      string
+    end
+  end
+
+  defp colorize_doc(escape, doc, %{colors: colors}) do
+    if colors[:enabled] do
+      Inspect.Algebra.color(doc, escape, %Inspect.Opts{syntax_colors: colors})
+    else
+      doc
+    end
+  end
+
+  defp formatter(:diff_enabled?, _, %{colors: colors}), do: colors[:enabled]
+
+  defp formatter(:error_info, msg, config), do: colorize(:red, msg, config)
+
+  defp formatter(:extra_info, msg, config), do: colorize(:cyan, msg, config)
+
+  defp formatter(:location_info, msg, config), do: colorize([:bright, :black], msg, config)
+
+  defp formatter(:diff_delete, doc, config), do: colorize_doc(:diff_delete, doc, config)
+
+  defp formatter(:diff_delete_whitespace, doc, config),
+    do: colorize_doc(:diff_delete_whitespace, doc, config)
+
+  defp formatter(:diff_insert, doc, config), do: colorize_doc(:diff_insert, doc, config)
+
+  defp formatter(:diff_insert_whitespace, doc, config),
+    do: colorize_doc(:diff_insert_whitespace, doc, config)
+
+  defp formatter(:blame_diff, msg, %{colors: colors} = config) do
+    if colors[:enabled] do
+      colorize(:red, msg, config)
+    else
+      "-" <> msg <> "-"
+    end
+  end
+
+  defp formatter(_, msg, _config), do: msg
+
+  @default_colors [
+    diff_delete: :red,
+    diff_delete_whitespace: IO.ANSI.color_background(2, 0, 0),
+    diff_insert: :green,
+    diff_insert_whitespace: IO.ANSI.color_background(0, 2, 0)
+  ]
+
+  defp colors(opts) do
+    @default_colors
+    |> Keyword.merge(opts[:colors])
+    |> Keyword.put_new(:enabled, IO.ANSI.enabled?())
   end
 end

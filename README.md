@@ -29,7 +29,7 @@ use({
 ## TODO
 
 [ ] Store output in temp files directly from the ExUnit formatter
-[ ] Enable colors
+[X] Enable colors
 [ ] Remove the JSON library dependency by using a simpler format
 [ ] Handle dynamic tests like when you have for a loop that generates tests
 [ ] Show error in line with diagnostics
