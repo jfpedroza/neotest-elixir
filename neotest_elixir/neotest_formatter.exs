@@ -6,12 +6,17 @@ defmodule NeotestElixirFormatter do
 
   @impl true
   def init(_opts) do
-    {:ok, nil}
+    config = %{
+      failure_count: 0
+    }
+
+    {:ok, config}
   end
 
   @impl true
   def handle_cast({:test_finished, %ExUnit.Test{} = test}, config) do
-    output = %{id: make_id(test), status: make_status(test), output: make_output(test)}
+    config = update_count(test, config)
+    output = %{id: make_id(test), status: make_status(test), output: make_output(test, config)}
     IO.puts(Jason.encode!(output))
 
     {:noreply, config}
@@ -20,6 +25,12 @@ defmodule NeotestElixirFormatter do
   def handle_cast(_msg, config) do
     {:noreply, config}
   end
+
+  defp update_count(%ExUnit.Test{state: {:failed, _}}, config) do
+    %{config | failure_count: config.failure_count + 1}
+  end
+
+  defp update_count(%ExUnit.Test{}, config), do: config
 
   defp make_id(%ExUnit.Test{} = test) do
     file = test.tags.file
@@ -51,19 +62,19 @@ defmodule NeotestElixirFormatter do
   defp make_status(%ExUnit.Test{state: {:excluded, _}}), do: "skipped"
   defp make_status(%ExUnit.Test{state: {:invalid, _}}), do: "failed"
 
-  defp make_output(%ExUnit.Test{state: {:failed, failures}} = test) do
-    ExUnit.Formatter.format_test_failure(test, failures, 0, 80, &formatter/2)
+  defp make_output(%ExUnit.Test{state: {:failed, failures}} = test, config) do
+    ExUnit.Formatter.format_test_failure(test, failures, config.failure_count, 80, &formatter/2)
   end
 
-  defp make_output(%ExUnit.Test{state: {:skipped, due_to}}) do
+  defp make_output(%ExUnit.Test{state: {:skipped, due_to}}, _config) do
     "Skipped #{due_to}"
   end
 
-  defp make_output(%ExUnit.Test{state: {:excluded, due_to}}) do
+  defp make_output(%ExUnit.Test{state: {:excluded, due_to}}, _config) do
     "Excluded #{due_to}"
   end
 
-  defp make_output(%ExUnit.Test{}), do: nil
+  defp make_output(%ExUnit.Test{}, _config), do: nil
 
   defp formatter(_, msg) do
     msg
