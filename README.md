@@ -28,10 +28,10 @@ use({
 
 ## TODO
 
-[X] Store output in temp files directly from the ExUnit formatter
-[X] Enable colors
-[ ] Remove the JSON library dependency by using a simpler format
-[ ] Handle dynamic tests like when you have for a loop that generates tests
-[ ] Show error in line with diagnostics
-[ ] Allow other formatters (I use ExUnitNotifier, and it doesn't work because I override the formatters)
+- [X] Store output in temp files directly from the ExUnit formatter
+- [X] Enable colors
+- [ ] Remove the JSON library dependency by using a simpler format
+- [ ] Handle dynamic tests like when you have for a loop that generates tests
+- [ ] Show error in line with diagnostics
+- [ ] Allow other formatters (I use ExUnitNotifier, and it doesn't work because I override the formatters)
 
