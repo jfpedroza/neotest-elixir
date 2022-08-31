@@ -71,9 +71,13 @@ function ElixirNeotestAdapter.build_spec(args)
     { "elixir", "-r", exunit_formatter, "-S", "mix", "test", "--formatter", "NeotestElixirFormatter" },
     get_args(position)
   )
+  local output_dir = async.fn.tempname()
 
   return {
     command = command,
+    env = {
+      NEOTEST_OUTPUT_DIR = output_dir,
+    },
   }
 end
 
@@ -87,15 +91,9 @@ function ElixirNeotestAdapter.results(_, result)
   for _, line in ipairs(data) do
     local ok, decoded_result = pcall(vim.json.decode, line, { luanil = { object = true } })
     if ok then
-      local output_path
-      if decoded_result.output then
-        output_path = async.fn.tempname()
-        Path:new(output_path):write(decoded_result.output, "w")
-      end
-
       results[decoded_result.id] = {
         status = decoded_result.status,
-        output = output_path,
+        output = decoded_result.output,
       }
     end
   end

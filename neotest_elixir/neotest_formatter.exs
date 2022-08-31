@@ -4,11 +4,18 @@ defmodule NeotestElixirFormatter do
   """
   use GenServer
 
+  require Logger
+
   @impl true
   def init(opts) do
+    output_dir = System.fetch_env!("NEOTEST_OUTPUT_DIR")
+    File.mkdir!(output_dir)
+
     config = %{
+      output_dir: output_dir,
       colors: colors(opts),
-      failure_count: 0
+      test_counter: 0,
+      failure_counter: 0
     }
 
     {:ok, config}
@@ -16,22 +23,41 @@ defmodule NeotestElixirFormatter do
 
   @impl true
   def handle_cast({:test_finished, %ExUnit.Test{} = test}, config) do
-    config = update_count(test, config)
-    output = %{id: make_id(test), status: make_status(test), output: make_output(test, config)}
-    IO.puts(Jason.encode!(output))
+    try do
+      config =
+        config
+        |> update_test_counter()
+        |> update_failure_counter(test)
 
-    {:noreply, config}
+      output = %{
+        id: make_id(test),
+        status: make_status(test),
+        output: save_test_output(test, config)
+      }
+
+      IO.puts(Jason.encode!(output))
+
+      {:noreply, config}
+    catch
+      kind, reason ->
+        Logger.error(Exception.format(kind, reason, __STACKTRACE__))
+        {:noreply, config}
+    end
   end
 
   def handle_cast(_msg, config) do
     {:noreply, config}
   end
 
-  defp update_count(%ExUnit.Test{state: {:failed, _}}, config) do
-    %{config | failure_count: config.failure_count + 1}
+  defp update_test_counter(config) do
+    %{config | test_counter: config.test_counter + 1}
   end
 
-  defp update_count(%ExUnit.Test{}, config), do: config
+  defp update_failure_counter(config, %ExUnit.Test{state: {:failed, _}}) do
+    %{config | failure_counter: config.failure_counter + 1}
+  end
+
+  defp update_failure_counter(config, %ExUnit.Test{}), do: config
 
   defp make_id(%ExUnit.Test{} = test) do
     file = test.tags.file
@@ -63,11 +89,21 @@ defmodule NeotestElixirFormatter do
   defp make_status(%ExUnit.Test{state: {:excluded, _}}), do: "skipped"
   defp make_status(%ExUnit.Test{state: {:invalid, _}}), do: "failed"
 
+  defp save_test_output(%ExUnit.Test{} = test, config) do
+    output = make_output(test, config)
+
+    if output do
+      file = Path.join(config.output_dir, "test_output_#{config.test_counter}")
+      File.write!(file, output)
+      file
+    end
+  end
+
   defp make_output(%ExUnit.Test{state: {:failed, failures}} = test, config) do
     ExUnit.Formatter.format_test_failure(
       test,
       failures,
-      config.failure_count,
+      config.failure_counter,
       80,
       &formatter(&1, &2, config)
     )
