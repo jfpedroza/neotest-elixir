@@ -75,6 +75,10 @@ function ElixirNeotestAdapter.build_spec(args)
 
   return {
     command = command,
+    context = {
+      position = position,
+      results_path = output_dir .. "/results",
+    },
     env = {
       NEOTEST_OUTPUT_DIR = output_dir,
     },
@@ -82,20 +86,28 @@ function ElixirNeotestAdapter.build_spec(args)
 end
 
 ---@async
+---@param spec neotest.RunSpec
 ---@param result neotest.StrategyResult
 ---@return neotest.Result[]
-function ElixirNeotestAdapter.results(_, result)
-  local data = lib.files.read_lines(result.output)
+function ElixirNeotestAdapter.results(spec, result)
   local results = {}
+  if result.code == 0 or result.code == 2 then
+    local data = lib.files.read_lines(spec.context.results_path)
 
-  for _, line in ipairs(data) do
-    local ok, decoded_result = pcall(vim.json.decode, line, { luanil = { object = true } })
-    if ok then
-      results[decoded_result.id] = {
-        status = decoded_result.status,
-        output = decoded_result.output,
-      }
+    for _, line in ipairs(data) do
+      local ok, decoded_result = pcall(vim.json.decode, line, { luanil = { object = true } })
+      if ok then
+        results[decoded_result.id] = {
+          status = decoded_result.status,
+          output = decoded_result.output,
+        }
+      end
     end
+  else
+    results[spec.context.position.id] = {
+      status = "failed",
+      output = result.output,
+    }
   end
 
   return results

@@ -10,9 +10,13 @@ defmodule NeotestElixirFormatter do
   def init(opts) do
     output_dir = System.fetch_env!("NEOTEST_OUTPUT_DIR")
     File.mkdir!(output_dir)
+    results_path = Path.join(output_dir, "results")
+    results_io_device = File.open!(results_path, [:write, :utf8])
 
     config = %{
       output_dir: output_dir,
+      results_path: results_path,
+      results_io_device: results_io_device,
       colors: colors(opts),
       test_counter: 0,
       failure_counter: 0
@@ -35,7 +39,7 @@ defmodule NeotestElixirFormatter do
         output: save_test_output(test, config)
       }
 
-      IO.puts(Jason.encode!(output))
+      IO.puts(config.results_io_device, Jason.encode!(output))
 
       {:noreply, config}
     catch
@@ -43,6 +47,11 @@ defmodule NeotestElixirFormatter do
         Logger.error(Exception.format(kind, reason, __STACKTRACE__))
         {:noreply, config}
     end
+  end
+
+  def handle_cast({:suite_finished, _}, config) do
+    File.close(config.results_io_device)
+    {:noreply, config}
   end
 
   def handle_cast(_msg, config) do
