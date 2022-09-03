@@ -68,7 +68,18 @@ end
 function ElixirNeotestAdapter.build_spec(args)
   local position = args.tree:data()
   local command = vim.list_extend(
-    { "elixir", "-r", exunit_formatter, "-S", "mix", "test", "--formatter", "NeotestElixirFormatter" },
+    {
+      "elixir",
+      "-r",
+      exunit_formatter,
+      "-S",
+      "mix",
+      "test",
+      "--formatter",
+      "ExUnit.CLIFormatter",
+      "--formatter",
+      "NeotestElixirFormatter",
+    },
     get_args(position)
   )
   local output_dir = async.fn.tempname()
