@@ -94,6 +94,7 @@ function ElixirNeotestAdapter.build_spec(args)
       "test",
     },
     get_formatters(),
+    args.extra_args or {},
     get_args(position),
   })
   local output_dir = async.fn.tempname()

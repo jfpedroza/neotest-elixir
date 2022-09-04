@@ -26,6 +26,8 @@ use({
 })
 ```
 
+## Configuration
+
 You can optionally specify some settings:
 
 ```lua
@@ -40,6 +42,12 @@ require("neotest").setup({
 })
 ```
 
+`extra_args` are also supported, so you can use them to specify other arguments to `mix test`:
+
+```lua
+require("neotest").run.run({vim.fn.expand("%"), extra_args = {"--formatter", "ExUnitNotifier", "--timeout", "60"}}))
+```
+
 ## TODO
 
 - [X] Store output in temp files directly from the ExUnit formatter
@@ -48,4 +56,3 @@ require("neotest").setup({
 - [ ] Handle dynamic tests like when you have for a loop that generates tests
 - [ ] Show error in line with diagnostics
 - [X] Allow specifying extra formatters
-
