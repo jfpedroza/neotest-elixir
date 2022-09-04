@@ -121,13 +121,11 @@ function ElixirNeotestAdapter.results(spec, result)
     local data = lib.files.read_lines(spec.context.results_path)
 
     for _, line in ipairs(data) do
-      local ok, decoded_result = pcall(vim.json.decode, line, { luanil = { object = true } })
-      if ok then
-        results[decoded_result.id] = {
-          status = decoded_result.status,
-          output = decoded_result.output,
-        }
-      end
+      local decoded_result = vim.json.decode(line, { luanil = { object = true } })
+      results[decoded_result.id] = {
+        status = decoded_result.status,
+        output = decoded_result.output,
+      }
     end
   else
     results[spec.context.position.id] = {
