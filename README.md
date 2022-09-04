@@ -10,19 +10,33 @@ Using packer:
 
 ```lua
 use({
-  'nvim-neotest/neotest',
+  "nvim-neotest/neotest",
   requires = {
     ...,
-    'nvim-neotest/neotest-elixir',
+    "nvim-neotest/neotest-elixir",
   }
   config = function()
-    require('neotest').setup({
+    require("neotest").setup({
       ...,
       adapters = {
-        require('neotest-elixir'),
+        require("neotest-elixir"),
       }
     })
   end
+})
+```
+
+You can optionally specify some settings:
+
+```lua
+require("neotest").setup({
+  adapters = {
+    require("neotest-elixir")({
+      -- Other formatters to pass to the test command as the formatters are overridden
+      -- Can be a function to return a dynamic value.
+      extra_formatters = {"ExUnitNotifier"}
+    }),
+  }
 })
 ```
 
@@ -33,5 +47,5 @@ use({
 - [ ] Remove the JSON library dependency by using a simpler format
 - [ ] Handle dynamic tests like when you have for a loop that generates tests
 - [ ] Show error in line with diagnostics
-- [ ] Allow other formatters (I use ExUnitNotifier, and it doesn't work because I override the formatters)
+- [X] Allow specifying extra formatters
 

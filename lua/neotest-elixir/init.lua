@@ -6,6 +6,23 @@ local base = require("neotest-elixir.base")
 ---@type neotest.Adapter
 local ElixirNeotestAdapter = { name = "neotest-elixir" }
 
+local default_formatters = { "ExUnit.CLIFormatter", "NeotestElixirFormatter" }
+
+local function get_formatters()
+  local formatters = default_formatters
+  if ElixirNeotestAdapter.extra_formatters then
+    vim.list_extend(formatters, ElixirNeotestAdapter.extra_formatters())
+  end
+
+  local result = {}
+  for _, formatter in ipairs(formatters) do
+    table.insert(result, "--formatter")
+    table.insert(result, formatter)
+  end
+
+  return result
+end
+
 ---@param position neotest.Position
 ---@return string[]
 local function get_args(position)
@@ -67,7 +84,7 @@ end
 ---@return neotest.RunSpec
 function ElixirNeotestAdapter.build_spec(args)
   local position = args.tree:data()
-  local command = vim.list_extend(
+  local command = vim.tbl_flatten({
     {
       "elixir",
       "-r",
@@ -75,13 +92,10 @@ function ElixirNeotestAdapter.build_spec(args)
       "-S",
       "mix",
       "test",
-      "--formatter",
-      "ExUnit.CLIFormatter",
-      "--formatter",
-      "NeotestElixirFormatter",
     },
-    get_args(position)
-  )
+    get_formatters(),
+    get_args(position),
+  })
   local output_dir = async.fn.tempname()
 
   return {
@@ -123,5 +137,23 @@ function ElixirNeotestAdapter.results(spec, result)
 
   return results
 end
+
+local is_callable = function(obj)
+  return type(obj) == "function" or (type(obj) == "table" and obj.__call)
+end
+
+setmetatable(ElixirNeotestAdapter, {
+  __call = function(_, opts)
+    if is_callable(opts.extra_formatters) then
+      ElixirNeotestAdapter.extra_formatters = opts.extra_formatters
+    else
+      ElixirNeotestAdapter.extra_formatters = function()
+        return opts.extra_formatters
+      end
+    end
+
+    return ElixirNeotestAdapter
+  end,
+})
 
 return ElixirNeotestAdapter
