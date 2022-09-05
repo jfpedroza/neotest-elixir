@@ -97,14 +97,37 @@ function ElixirNeotestAdapter.build_spec(args)
     args.extra_args or {},
     get_args(position),
   })
+
   local output_dir = async.fn.tempname()
+  Path:new(output_dir):mkdir()
+  local results_path = output_dir .. "/results"
+  local x = io.open(results_path, "w")
+  x:write("")
+  x:close()
+
+  local stream_data, stop_stream = lib.files.stream_lines(results_path)
 
   return {
     command = command,
     context = {
       position = position,
-      results_path = output_dir .. "/results",
+      results_path = results_path,
+      stop_stream = stop_stream,
     },
+    stream = function()
+      return function()
+        local lines = stream_data()
+        local results = {}
+        for _, line in ipairs(lines) do
+          local decoded_result = vim.json.decode(line, { luanil = { object = true } })
+          results[decoded_result.id] = {
+            status = decoded_result.status,
+            output = decoded_result.output,
+          }
+        end
+        return results
+      end
+    end,
     env = {
       NEOTEST_OUTPUT_DIR = output_dir,
     },
@@ -116,6 +139,7 @@ end
 ---@param result neotest.StrategyResult
 ---@return neotest.Result[]
 function ElixirNeotestAdapter.results(spec, result)
+  spec.context.stop_stream()
   local results = {}
   if result.code == 0 or result.code == 2 then
     local data = lib.files.read_lines(spec.context.results_path)
