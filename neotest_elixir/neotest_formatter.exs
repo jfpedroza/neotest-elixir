@@ -39,7 +39,7 @@ defmodule NeotestElixirFormatter do
         output: save_test_output(test, config)
       }
 
-      IO.puts(config.results_io_device, Jason.encode!(output))
+      IO.puts(config.results_io_device, json_encode!(output))
 
       {:noreply, config}
     catch
@@ -187,5 +187,17 @@ defmodule NeotestElixirFormatter do
     @default_colors
     |> Keyword.merge(opts[:colors])
     |> Keyword.put_new(:enabled, IO.ANSI.enabled?())
+  end
+
+  case System.get_env("NEOTEST_JSON_MODULE", "Jason") do
+    "Jason" ->
+      def json_encode!(data) do
+        Jason.encode_to_iodata!(data)
+      end
+
+    "Poison" ->
+      def json_encode!(data) do
+        Poison.encode!(data, iodata: true)
+      end
   end
 end

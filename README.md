@@ -26,6 +26,10 @@ use({
 })
 ```
 
+## Caveats
+
+Currently, the adapter requires either Jason or Poison to be available in the project
+
 ## Configuration
 
 You can optionally specify some settings:
@@ -36,7 +40,9 @@ require("neotest").setup({
     require("neotest-elixir")({
       -- Other formatters to pass to the test command as the formatters are overridden
       -- Can be a function to return a dynamic value.
-      extra_formatters = {"ExUnitNotifier"}
+      extra_formatters = {"ExUnitNotifier"},
+      -- Can be Jason or Poison, default: Jason
+      json_module = "Jason"
     }),
   }
 })
@@ -52,7 +58,7 @@ require("neotest").run.run({vim.fn.expand("%"), extra_args = {"--formatter", "Ex
 
 - [X] Store output in temp files directly from the ExUnit formatter
 - [X] Enable colors
-- [ ] Remove the JSON library dependency by using a simpler format
+- [ ] Support projects without a JSON library in the dependencies
 - [ ] Handle dynamic tests like when you have for a loop that generates tests
 - [ ] Show error in line with diagnostics
 - [X] Allow specifying extra formatters
