@@ -6,12 +6,15 @@ local base = require("neotest-elixir.base")
 ---@type neotest.Adapter
 local ElixirNeotestAdapter = { name = "neotest-elixir" }
 
-local default_formatters = { "ExUnit.CLIFormatter", "NeotestElixirFormatter" }
+local default_formatters = { "NeotestElixirFormatter" }
 
 local function get_formatters()
-  local formatters = default_formatters
+  -- tables need to be copied by value
+  local formatters = { unpack(default_formatters) }
   if ElixirNeotestAdapter.extra_formatters then
     vim.list_extend(formatters, ElixirNeotestAdapter.extra_formatters())
+  else
+    vim.list_extend(formatters, { "ExUnit.CLIFormatter" })
   end
 
   local result = {}
