@@ -40,7 +40,8 @@ require("neotest").setup({
     require("neotest-elixir")({
       -- Other formatters to pass to the test command as the formatters are overridden
       -- Can be a function to return a dynamic value.
-      extra_formatters = {"ExUnitNotifier"},
+      -- Default: {"ExUnit.CLIFormatter"}
+      extra_formatters = {"ExUnit.CLIFormatter", "ExUnitNotifier"}
       -- Can be Jason or Poison, default: Jason
       json_module = "Jason"
     }),
