@@ -13,7 +13,7 @@ use({
   "nvim-neotest/neotest",
   requires = {
     ...,
-    "nvim-neotest/neotest-elixir",
+    "jfpedroza/neotest-elixir",
   }
   config = function()
     require("neotest").setup({
