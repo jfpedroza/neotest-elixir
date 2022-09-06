@@ -36,7 +36,8 @@ defmodule NeotestElixirFormatter do
       output = %{
         id: make_id(test),
         status: make_status(test),
-        output: save_test_output(test, config)
+        output: save_test_output(test, config),
+        errors: make_errors(test)
       }
 
       IO.puts(config.results_io_device, json_encode!(output))
@@ -127,6 +128,41 @@ defmodule NeotestElixirFormatter do
   end
 
   defp make_output(%ExUnit.Test{}, _config), do: nil
+
+  defp make_errors(%ExUnit.Test{state: {:failed, failures}} = test) do
+    Enum.map(failures, fn failure ->
+      %{message: make_error_message(failure), line: make_error_line(failure, test)}
+    end)
+  end
+
+  defp make_errors(%ExUnit.Test{}), do: []
+
+  defp make_error_message(failure) do
+    case failure do
+      {:error, exception, _stack} when is_exception(exception) ->
+        exception |> Exception.message() |> String.trim()
+
+      {kind, reason, _stack} ->
+        "#{kind}: #{inspect(reason)}"
+    end
+  end
+
+  defp make_error_line({_kind, _reason, stack}, %ExUnit.Test{} = test) do
+    test_call =
+      Enum.find(stack, fn {module, function, _, _} ->
+        module == test.module and function == test.name
+      end)
+
+    case test_call do
+      {_, _, _, location} ->
+        if line = location[:line] do
+          line - 1
+        end
+
+      nil ->
+        nil
+    end
+  end
 
   # Color styles, copied from CLIFormatter
 

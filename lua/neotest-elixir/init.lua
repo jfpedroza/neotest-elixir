@@ -127,6 +127,7 @@ function ElixirNeotestAdapter.build_spec(args)
           results[decoded_result.id] = {
             status = decoded_result.status,
             output = decoded_result.output,
+            errors = decoded_result.errors,
           }
         end
         return results
@@ -154,6 +155,7 @@ function ElixirNeotestAdapter.results(spec, result)
       results[decoded_result.id] = {
         status = decoded_result.status,
         output = decoded_result.output,
+        errors = decoded_result.errors,
       }
     end
   else
