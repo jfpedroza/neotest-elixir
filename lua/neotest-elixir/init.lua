@@ -54,7 +54,13 @@ end
 
 local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_elixir/neotest_formatter.exs").filename
 
-ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
+function ElixirNeotestAdapter.root(file_path) 
+  local mix_root = lib.files.match_root_pattern("mix.exs")(file_path)
+  if mix_root==nil or mix_root == "" then
+    return mix_root
+  end
+  return mix_root .. Path.path.sep .. "test"
+end
 
 function ElixirNeotestAdapter.is_test_file(file_path)
   return base.is_test_file(file_path)
