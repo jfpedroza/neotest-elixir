@@ -131,7 +131,8 @@ defmodule NeotestElixirFormatter do
 
   defp make_errors(%ExUnit.Test{state: {:failed, failures}} = test) do
     Enum.map(failures, fn failure ->
-      %{message: make_error_message(failure), line: make_error_line(failure, test)}
+      {message, stack} = make_error_message(failure)
+      %{message: message, line: make_error_line(stack, test)}
     end)
   end
 
@@ -139,30 +140,55 @@ defmodule NeotestElixirFormatter do
 
   defp make_error_message(failure) do
     case failure do
-      {:error, exception, _stack} when is_exception(exception) ->
-        exception |> Exception.message() |> String.trim()
+      {{:EXIT, _}, {reason, [_ | _] = stack}, _stack} ->
+        {extract_message(:error, reason), stack}
 
-      {kind, reason, _stack} ->
-        "#{kind}: #{inspect(reason)}"
+      {kind, reason, stack} ->
+        {extract_message(kind, reason), stack}
     end
   end
 
-  defp make_error_line({_kind, _reason, stack}, %ExUnit.Test{} = test) do
-    test_call =
-      Enum.find(stack, fn {module, function, _, _} ->
-        module == test.module and function == test.name
-      end)
+  defp extract_message(:error, %ExUnit.AssertionError{message: message}), do: message
 
-    case test_call do
-      {_, _, _, location} ->
-        if line = location[:line] do
-          line - 1
-        end
+  defp extract_message(kind, reason) do
+    kind
+    |> Exception.format_banner(reason)
+    |> String.split("\n", trim: true)
+    |> hd()
+    |> String.replace_prefix("** ", "")
+  end
 
-      nil ->
-        nil
+  defp make_error_line(stack, %ExUnit.Test{} = test) do
+    if test_call = find_exact_test_stack_match(stack, test) do
+      line_from_stack_entry(test_call)
+    else
+      stack
+      |> find_anon_fun_test_stack_match(test)
+      |> line_from_stack_entry()
     end
   end
+
+  defp find_exact_test_stack_match(stack, test) do
+    Enum.find(stack, fn {module, function, _, _} ->
+      module == test.module and function == test.name
+    end)
+  end
+
+  defp find_anon_fun_test_stack_match(stack, test) do
+    fun_prefix = "-#{test.name}/1-"
+
+    Enum.find(stack, fn {module, function, _, _} ->
+      module == test.module and String.starts_with?(to_string(function), fun_prefix)
+    end)
+  end
+
+  defp line_from_stack_entry({_, _, _, location}) do
+    if line = location[:line] do
+      line - 1
+    end
+  end
+
+  defp line_from_stack_entry(nil), do: nil
 
   # Color styles, copied from CLIFormatter
 
