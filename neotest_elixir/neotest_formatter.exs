@@ -75,19 +75,6 @@ defmodule NeotestElixirFormatter do
     "#{Path.relative_to_cwd(tags[:file])}:#{tags[:line]}"
   end
 
-  defp remove_prefix(%ExUnit.Test{} = test) do
-    name = to_string(test.name)
-
-    prefix =
-      if test.tags.describe do
-        "#{test.tags.test_type} #{test.tags.describe} "
-      else
-        "#{test.tags.test_type} "
-      end
-
-    String.replace_prefix(name, prefix, "")
-  end
-
   defp make_status(%ExUnit.Test{state: nil}), do: "passed"
   defp make_status(%ExUnit.Test{state: {:failed, _}}), do: "failed"
   defp make_status(%ExUnit.Test{state: {:skipped, _}}), do: "skipped"
@@ -99,7 +86,13 @@ defmodule NeotestElixirFormatter do
 
     if output do
       file = Path.join(config.output_dir, "test_output_#{:erlang.phash2(id)}")
-      File.write!(file, output, [:append])
+
+      if File.exists?(file) do
+        File.write!(file, ["\n\n", output], [:append])
+      else
+        File.write!(file, output)
+      end
+
       file
     end
   end
