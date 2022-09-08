@@ -1,8 +1,6 @@
 # neotest-elixir
 
-[WIP] Neotest adapter for Elixir
-
-Status: The adapter is currently working, you can execute the different types (single test, file, etc.) and see the result and the output.
+Neotest adapter for Elixir
 
 ## Installation
 
