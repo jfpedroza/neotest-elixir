@@ -58,6 +58,6 @@ require("neotest").run.run({vim.fn.expand("%"), extra_args = {"--formatter", "Ex
 - [X] Store output in temp files directly from the ExUnit formatter
 - [X] Enable colors
 - [ ] Support projects without a JSON library in the dependencies
-- [ ] Handle dynamic tests like when you have for a loop that generates tests
+- [X] Handle dynamic tests like when you have for a loop that generates tests
 - [X] Show error in line with diagnostics
 - [X] Allow specifying extra formatters
