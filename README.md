@@ -61,5 +61,5 @@ require("neotest").run.run({vim.fn.expand("%"), extra_args = {"--formatter", "Ex
 - [X] Enable colors
 - [ ] Support projects without a JSON library in the dependencies
 - [ ] Handle dynamic tests like when you have for a loop that generates tests
-- [ ] Show error in line with diagnostics
+- [X] Show error in line with diagnostics
 - [X] Allow specifying extra formatters
