@@ -249,5 +249,10 @@ defmodule NeotestElixirFormatter do
       def json_encode!(data) do
         Poison.encode!(data, iodata: true)
       end
+
+    "embedded" ->
+      def json_encode!(data) do
+        NeotestElixir.JsonEncoder.encode!(data)
+      end
   end
 end

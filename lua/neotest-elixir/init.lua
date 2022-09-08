@@ -74,6 +74,7 @@ local function generate_id(position)
   return (relative_path .. ":" .. line_num)
 end
 
+local json_encoder = (Path.new(script_path()):parent():parent() / "neotest_elixir/json_encoder.exs").filename
 local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_elixir/neotest_formatter.exs").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
@@ -112,6 +113,8 @@ function ElixirNeotestAdapter.build_spec(args)
   local command = vim.tbl_flatten({
     {
       "elixir",
+      "-r",
+      json_encoder,
       "-r",
       exunit_formatter,
       "-S",
