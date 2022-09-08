@@ -52,6 +52,23 @@ local function script_path()
   return str:match("(.*/)")
 end
 
+local function mix_root(file_path)
+  return lib.files.match_root_pattern("mix.exs")(file_path)
+end
+
+local function get_relative_path(file_path)
+  local mix_root_path = mix_root(file_path)
+  local root_elems = vim.split(mix_root_path, Path.path.sep)
+  local elems = vim.split(file_path, Path.path.sep)
+  return table.concat({unpack(elems, (#root_elems + 1), #elems)}, Path.path.sep)
+end
+
+local function generate_id(position)
+  local relative_path = get_relative_path(position.path)
+  local line_num = (position.range[1] + 1)
+  return (relative_path .. ":" .. line_num)
+end
+
 local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_elixir/neotest_formatter.exs").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
@@ -79,7 +96,7 @@ function ElixirNeotestAdapter.discover_positions(path)
   ) @test.definition
   ]]
 
-  return lib.treesitter.parse_positions(path, query, { nested_namespaces = false })
+  return lib.treesitter.parse_positions(path, query, { nested_namespaces = false, position_id = generate_id })
 end
 
 ---@async
@@ -124,11 +141,14 @@ function ElixirNeotestAdapter.build_spec(args)
         local results = {}
         for _, line in ipairs(lines) do
           local decoded_result = vim.json.decode(line, { luanil = { object = true } })
-          results[decoded_result.id] = {
-            status = decoded_result.status,
-            output = decoded_result.output,
-            errors = decoded_result.errors,
-          }
+          local earlier_result = results[decoded_result.id]
+          if (earlier_result == nil or earlier_result.status ~= "failed") then
+            results[decoded_result.id] = {
+              status = decoded_result.status,
+              output = decoded_result.output,
+              errors = decoded_result.errors,
+            }
+          end
         end
         return results
       end
@@ -152,11 +172,14 @@ function ElixirNeotestAdapter.results(spec, result)
 
     for _, line in ipairs(data) do
       local decoded_result = vim.json.decode(line, { luanil = { object = true } })
-      results[decoded_result.id] = {
-        status = decoded_result.status,
-        output = decoded_result.output,
-        errors = decoded_result.errors,
-      }
+      local earlier_result = results[decoded_result.id]
+      if (earlier_result == nil or earlier_result.status ~= "failed") then
+        results[decoded_result.id] = {
+          status = decoded_result.status,
+          output = decoded_result.output,
+          errors = decoded_result.errors,
+        }
+      end
     end
   else
     results[spec.context.position.id] = {

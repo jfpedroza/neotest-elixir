@@ -33,10 +33,12 @@ defmodule NeotestElixirFormatter do
         |> update_test_counter()
         |> update_failure_counter(test)
 
+      id = make_id(test)
+
       output = %{
-        id: make_id(test),
+        id: id,
         status: make_status(test),
-        output: save_test_output(test, config),
+        output: save_test_output(test, config, id),
         errors: make_errors(test)
       }
 
@@ -69,28 +71,8 @@ defmodule NeotestElixirFormatter do
 
   defp update_failure_counter(config, %ExUnit.Test{}), do: config
 
-  defp make_id(%ExUnit.Test{} = test) do
-    file = test.tags.file
-    name = remove_prefix(test)
-
-    if describe = test.tags.describe do
-      "#{file}::#{describe}::#{name}"
-    else
-      "#{file}::#{name}"
-    end
-  end
-
-  defp remove_prefix(%ExUnit.Test{} = test) do
-    name = to_string(test.name)
-
-    prefix =
-      if test.tags.describe do
-        "#{test.tags.test_type} #{test.tags.describe} "
-      else
-        "#{test.tags.test_type} "
-      end
-
-    String.replace_prefix(name, prefix, "")
+  defp make_id(%ExUnit.Test{tags: tags} = _test) do
+    "#{Path.relative_to_cwd(tags[:file])}:#{tags[:line]}"
   end
 
   defp make_status(%ExUnit.Test{state: nil}), do: "passed"
@@ -99,12 +81,18 @@ defmodule NeotestElixirFormatter do
   defp make_status(%ExUnit.Test{state: {:excluded, _}}), do: "skipped"
   defp make_status(%ExUnit.Test{state: {:invalid, _}}), do: "failed"
 
-  defp save_test_output(%ExUnit.Test{} = test, config) do
+  defp save_test_output(%ExUnit.Test{} = test, config, id) do
     output = make_output(test, config)
 
     if output do
-      file = Path.join(config.output_dir, "test_output_#{config.test_counter}")
-      File.write!(file, output)
+      file = Path.join(config.output_dir, "test_output_#{:erlang.phash2(id)}")
+
+      if File.exists?(file) do
+        File.write!(file, ["\n\n", output], [:append])
+      else
+        File.write!(file, output)
+      end
+
       file
     end
   end
