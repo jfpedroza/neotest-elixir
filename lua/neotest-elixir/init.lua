@@ -2,21 +2,21 @@ local Path = require("plenary.path")
 local async = require("neotest.async")
 local lib = require("neotest.lib")
 local base = require("neotest-elixir.base")
-local logger = require('neotest.logging')
+local logger = require("neotest.logging")
 
 ---@type neotest.Adapter
 local ElixirNeotestAdapter = { name = "neotest-elixir" }
 
 local default_formatters = { "NeotestElixirFormatter" }
 
+local function get_extra_formatters()
+  return { "ExUnit.CLIFormatter" }
+end
+
 local function get_formatters()
   -- tables need to be copied by value
   local formatters = { unpack(default_formatters) }
-  if ElixirNeotestAdapter.extra_formatters then
-    vim.list_extend(formatters, ElixirNeotestAdapter.extra_formatters())
-  else
-    vim.list_extend(formatters, { "ExUnit.CLIFormatter" })
-  end
+  vim.list_extend(formatters, get_extra_formatters())
 
   local result = {}
   for _, formatter in ipairs(formatters) do
@@ -61,7 +61,7 @@ local function get_relative_path(file_path)
   local mix_root_path = mix_root(file_path)
   local root_elems = vim.split(mix_root_path, Path.path.sep)
   local elems = vim.split(file_path, Path.path.sep)
-  return table.concat({unpack(elems, (#root_elems + 1), #elems)}, Path.path.sep)
+  return table.concat({ unpack(elems, (#root_elems + 1), #elems) }, Path.path.sep)
 end
 
 local function generate_id(position)
@@ -144,7 +144,7 @@ function ElixirNeotestAdapter.build_spec(args)
         for _, line in ipairs(lines) do
           local decoded_result = vim.json.decode(line, { luanil = { object = true } })
           local earlier_result = results[decoded_result.id]
-          if (earlier_result == nil or earlier_result.status ~= "failed") then
+          if earlier_result == nil or earlier_result.status ~= "failed" then
             results[decoded_result.id] = {
               status = decoded_result.status,
               output = decoded_result.output,
@@ -175,7 +175,7 @@ function ElixirNeotestAdapter.results(spec, result)
     for _, line in ipairs(data) do
       local decoded_result = vim.json.decode(line, { luanil = { object = true } })
       local earlier_result = results[decoded_result.id]
-      if (earlier_result == nil or earlier_result.status ~= "failed") then
+      if earlier_result == nil or earlier_result.status ~= "failed" then
         results[decoded_result.id] = {
           status = decoded_result.status,
           output = decoded_result.output,
@@ -200,9 +200,9 @@ end
 setmetatable(ElixirNeotestAdapter, {
   __call = function(_, opts)
     if is_callable(opts.extra_formatters) then
-      ElixirNeotestAdapter.extra_formatters = opts.extra_formatters
-    else
-      ElixirNeotestAdapter.extra_formatters = function()
+      get_extra_formatters = opts.extra_formatters
+    elseif opts.extra_formatters then
+      get_extra_formatters = function()
         return opts.extra_formatters
       end
     end
