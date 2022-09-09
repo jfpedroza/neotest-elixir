@@ -6,6 +6,8 @@ defmodule NeotestElixir.Formatter do
 
   require Logger
 
+  alias NeotestElixir.JsonEncoder
+
   @impl true
   def init(opts) do
     output_dir = System.fetch_env!("NEOTEST_OUTPUT_DIR")
@@ -42,7 +44,7 @@ defmodule NeotestElixir.Formatter do
         errors: make_errors(test)
       }
 
-      IO.puts(config.results_io_device, json_encode!(output))
+      IO.puts(config.results_io_device, JsonEncoder.encode!(output))
 
       {:noreply, config}
     catch
@@ -237,22 +239,5 @@ defmodule NeotestElixir.Formatter do
     @default_colors
     |> Keyword.merge(opts[:colors])
     |> Keyword.put_new(:enabled, IO.ANSI.enabled?())
-  end
-
-  case System.get_env("NEOTEST_JSON_MODULE", "Jason") do
-    "Jason" ->
-      def json_encode!(data) do
-        Jason.encode_to_iodata!(data)
-      end
-
-    "Poison" ->
-      def json_encode!(data) do
-        Poison.encode!(data, iodata: true)
-      end
-
-    "embedded" ->
-      def json_encode!(data) do
-        NeotestElixir.JsonEncoder.encode!(data)
-      end
   end
 end

@@ -136,7 +136,6 @@ function ElixirNeotestAdapter.build_spec(args)
   x:close()
 
   local stream_data, stop_stream = lib.files.stream_lines(results_path)
-  local json_module = ElixirNeotestAdapter.json_module or "Jason"
 
   return {
     command = command,
@@ -165,7 +164,6 @@ function ElixirNeotestAdapter.build_spec(args)
     end,
     env = {
       NEOTEST_OUTPUT_DIR = output_dir,
-      NEOTEST_JSON_MODULE = json_module,
     },
   }
 end
@@ -222,8 +220,6 @@ setmetatable(ElixirNeotestAdapter, {
         return opts.args
       end
     end
-
-    ElixirNeotestAdapter.json_module = opts.json_module
 
     return ElixirNeotestAdapter
   end,

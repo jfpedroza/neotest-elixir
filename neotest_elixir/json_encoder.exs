@@ -1,4 +1,11 @@
 defmodule NeotestElixir.JsonEncoder do
+  @moduledoc """
+  A custom JSON encoder that doesn't use protocols based on [elixir-json](https://github.com/cblage/elixir-json).
+
+  The encoder is embedded because that way we don't depend on a library being installed
+  in the project and also we can't really add dependencies ourselves.
+  """
+
   @acii_space 32
 
   def encode!(input) do
