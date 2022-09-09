@@ -27,9 +27,13 @@ local function get_formatters()
   return result
 end
 
+local function get_args(_)
+  return {}
+end
+
 ---@param position neotest.Position
 ---@return string[]
-local function get_args(position)
+local function get_args_from_position(position)
   if position.type == "dir" then
     local root = ElixirNeotestAdapter.root(position.path)
     local path = Path:new(position.path)
@@ -115,8 +119,9 @@ function ElixirNeotestAdapter.build_spec(args)
       "test",
     },
     get_formatters(),
-    args.extra_args or {},
     get_args(position),
+    args.extra_args or {},
+    get_args_from_position(position),
   })
 
   local output_dir = async.fn.tempname()
@@ -204,6 +209,14 @@ setmetatable(ElixirNeotestAdapter, {
     elseif opts.extra_formatters then
       get_extra_formatters = function()
         return opts.extra_formatters
+      end
+    end
+
+    if is_callable(opts.args) then
+      get_args = opts.args
+    elseif opts.args then
+      get_args = function()
+        return opts.args
       end
     end
 

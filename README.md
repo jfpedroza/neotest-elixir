@@ -39,7 +39,11 @@ require("neotest").setup({
       -- Other formatters to pass to the test command as the formatters are overridden
       -- Can be a function to return a dynamic value.
       -- Default: {"ExUnit.CLIFormatter"}
-      extra_formatters = {"ExUnit.CLIFormatter", "ExUnitNotifier"}
+      extra_formatters = {"ExUnit.CLIFormatter", "ExUnitNotifier"},
+      -- Extra arguments to pass to mix test
+      -- Can be a function that receives the position, to return a dynamic value
+      -- Default: {}
+      args: {"--trace"},
       -- Can be Jason or Poison, default: Jason
       json_module = "Jason"
     }),
