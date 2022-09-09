@@ -1,0 +1,17 @@
+name: neotest-elixir Workflow
+on:
+  push:
+    branches:
+      - master
+  pull_request: ~
+jobs:
+  lua-style:
+    name: Lua style
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: JohnnyMorganz/stylua-action@1.0.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --check lua/
+
