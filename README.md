@@ -43,7 +43,7 @@ require("neotest").setup({
       -- Extra arguments to pass to mix test
       -- Can be a function that receives the position, to return a dynamic value
       -- Default: {}
-      args: {"--trace"},
+      args = {"--trace"},
       -- Can be Jason or Poison, default: Jason
       json_module = "Jason"
     }),
