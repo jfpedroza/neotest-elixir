@@ -7,7 +7,7 @@ local logger = require("neotest.logging")
 ---@type neotest.Adapter
 local ElixirNeotestAdapter = { name = "neotest-elixir" }
 
-local default_formatters = { "NeotestElixirFormatter" }
+local default_formatters = { "NeotestElixir.Formatter" }
 
 local function get_extra_formatters()
   return { "ExUnit.CLIFormatter" }

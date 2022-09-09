@@ -1,4 +1,4 @@
-defmodule NeotestElixirFormatter do
+defmodule NeotestElixir.Formatter do
   @moduledoc """
   A custom ExUnit formatter to provide output that is easier to parse.
   """
