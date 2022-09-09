@@ -2,6 +2,7 @@ local Path = require("plenary.path")
 local async = require("neotest.async")
 local lib = require("neotest.lib")
 local base = require("neotest-elixir.base")
+local logger = require('neotest.logging')
 
 ---@type neotest.Adapter
 local ElixirNeotestAdapter = { name = "neotest-elixir" }
@@ -121,6 +122,7 @@ function ElixirNeotestAdapter.build_spec(args)
   local output_dir = async.fn.tempname()
   Path:new(output_dir):mkdir()
   local results_path = output_dir .. "/results"
+  logger.debug("result path: " .. results_path)
   local x = io.open(results_path, "w")
   x:write("")
   x:close()

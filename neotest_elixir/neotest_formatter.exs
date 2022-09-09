@@ -11,7 +11,7 @@ defmodule NeotestElixirFormatter do
     output_dir = System.fetch_env!("NEOTEST_OUTPUT_DIR")
     File.mkdir_p!(output_dir)
     results_path = Path.join(output_dir, "results")
-    results_io_device = File.open!(results_path, [:write, :utf8])
+    results_io_device = File.open!(results_path, [:write, :delayed_write, :utf8])
 
     config = %{
       output_dir: output_dir,
