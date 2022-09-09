@@ -24,10 +24,6 @@ use({
 })
 ```
 
-## Caveats
-
-Currently, the adapter requires either Jason or Poison to be available in the project
-
 ## Configuration
 
 You can optionally specify some settings:
@@ -44,8 +40,6 @@ require("neotest").setup({
       -- Can be a function that receives the position, to return a dynamic value
       -- Default: {}
       args = {"--trace"},
-      -- Can be Jason or Poison, default: Jason
-      json_module = "Jason"
     }),
   }
 })
@@ -61,7 +55,7 @@ require("neotest").run.run({vim.fn.expand("%"), extra_args = {"--formatter", "Ex
 
 - [X] Store output in temp files directly from the ExUnit formatter
 - [X] Enable colors
-- [ ] Support projects without a JSON library in the dependencies
+- [X] Support projects without a JSON library in the dependencies
 - [X] Handle dynamic tests like when you have for a loop that generates tests
 - [X] Show error in line with diagnostics
 - [X] Allow specifying extra formatters

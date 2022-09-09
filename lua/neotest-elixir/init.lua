@@ -7,7 +7,7 @@ local logger = require("neotest.logging")
 ---@type neotest.Adapter
 local ElixirNeotestAdapter = { name = "neotest-elixir" }
 
-local default_formatters = { "NeotestElixirFormatter" }
+local default_formatters = { "NeotestElixir.Formatter" }
 
 local function get_extra_formatters()
   return { "ExUnit.CLIFormatter" }
@@ -74,6 +74,7 @@ local function generate_id(position)
   return (relative_path .. ":" .. line_num)
 end
 
+local json_encoder = (Path.new(script_path()):parent():parent() / "neotest_elixir/json_encoder.exs").filename
 local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_elixir/neotest_formatter.exs").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
@@ -113,6 +114,8 @@ function ElixirNeotestAdapter.build_spec(args)
     {
       "elixir",
       "-r",
+      json_encoder,
+      "-r",
       exunit_formatter,
       "-S",
       "mix",
@@ -133,7 +136,6 @@ function ElixirNeotestAdapter.build_spec(args)
   x:close()
 
   local stream_data, stop_stream = lib.files.stream_lines(results_path)
-  local json_module = ElixirNeotestAdapter.json_module or "Jason"
 
   return {
     command = command,
@@ -162,7 +164,6 @@ function ElixirNeotestAdapter.build_spec(args)
     end,
     env = {
       NEOTEST_OUTPUT_DIR = output_dir,
-      NEOTEST_JSON_MODULE = json_module,
     },
   }
 end
@@ -219,8 +220,6 @@ setmetatable(ElixirNeotestAdapter, {
         return opts.args
       end
     end
-
-    ElixirNeotestAdapter.json_module = opts.json_module
 
     return ElixirNeotestAdapter
   end,

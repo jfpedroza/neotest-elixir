@@ -1,10 +1,12 @@
-defmodule NeotestElixirFormatter do
+defmodule NeotestElixir.Formatter do
   @moduledoc """
   A custom ExUnit formatter to provide output that is easier to parse.
   """
   use GenServer
 
   require Logger
+
+  alias NeotestElixir.JsonEncoder
 
   @impl true
   def init(opts) do
@@ -42,7 +44,7 @@ defmodule NeotestElixirFormatter do
         errors: make_errors(test)
       }
 
-      IO.puts(config.results_io_device, json_encode!(output))
+      IO.puts(config.results_io_device, JsonEncoder.encode!(output))
 
       {:noreply, config}
     catch
@@ -237,17 +239,5 @@ defmodule NeotestElixirFormatter do
     @default_colors
     |> Keyword.merge(opts[:colors])
     |> Keyword.put_new(:enabled, IO.ANSI.enabled?())
-  end
-
-  case System.get_env("NEOTEST_JSON_MODULE", "Jason") do
-    "Jason" ->
-      def json_encode!(data) do
-        Jason.encode_to_iodata!(data)
-      end
-
-    "Poison" ->
-      def json_encode!(data) do
-        Poison.encode!(data, iodata: true)
-      end
   end
 end
