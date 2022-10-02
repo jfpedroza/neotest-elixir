@@ -106,7 +106,7 @@ function ElixirNeotestAdapter.discover_positions(path)
   ) @test.definition
   ]]
 
-  return lib.treesitter.parse_positions(path, query, { nested_namespaces = false, position_id = generate_id })
+  return lib.treesitter.parse_positions(path, query, { position_id = generate_id })
 end
 
 ---@async
