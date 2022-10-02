@@ -1,4 +1,5 @@
 local Path = require("plenary.path")
+local Job = require("plenary.job")
 local async = require("neotest.async")
 local lib = require("neotest.lib")
 local base = require("neotest-elixir.base")
@@ -56,6 +57,12 @@ local function get_write_delay()
   return 1000
 end
 
+---@return "treesitter" | "ex_unit"
+local function get_parse_mode()
+  return "treesitter"
+  -- return "ex_unit"
+end
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
@@ -78,8 +85,10 @@ function ElixirNeotestAdapter._generate_id(position)
   return (relative_path .. ":" .. line_num)
 end
 
-local json_encoder = (Path.new(script_path()):parent():parent() / "neotest_elixir/json_encoder.exs").filename
-local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_elixir/neotest_formatter.exs").filename
+local plugin_path = Path.new(script_path()):parent():parent()
+local json_encoder = (plugin_path / "neotest_elixir/json_encoder.exs").filename
+local exunit_formatter = (plugin_path / "neotest_elixir/neotest_formatter.exs").filename
+local exunit_parser = (plugin_path / "neotest_elixir/test_parser.exs").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
@@ -133,7 +142,7 @@ end
 
 ---@async
 ---@return neotest.Tree | nil
-function ElixirNeotestAdapter.discover_positions(path)
+local function treesitter_discover_positions(path)
   local query = [[
   ;; query
   ;; Describe blocks
@@ -170,6 +179,62 @@ function ElixirNeotestAdapter.discover_positions(path)
   local position_id = 'require("neotest-elixir")._generate_id'
   local build_position = 'require("neotest-elixir")._build_position'
   return lib.treesitter.parse_positions(path, query, { position_id = position_id, build_position = build_position })
+end
+
+---@return neotest.Tree | nil
+local function ex_unit_discover_posititons(path)
+  -- print("Discover", path)
+
+  -- if path:match("player") then
+  local positions = {}
+  local status_ok, result = pcall(function()
+    local job_id = vim.fn.jobstart({ "mix", "run", "--no-start", "-r", json_encoder, exunit_parser, path }, {
+      env = {
+        MIX_ENV = "test",
+      },
+      stdout_buffered = true,
+      on_stdout = function(_, data)
+        if not data then
+          return
+        end
+
+        for _, line in ipairs(data) do
+          -- print("Line", line)
+          if line ~= "" then
+            table.insert(positions, vim.json.decode(line))
+          end
+        end
+      end,
+      on_exit = function() end,
+    })
+
+    if job_id > 0 then
+      vim.fn.jobwait({ job_id }, 3000)
+    end
+  end)
+
+  if not status_ok then
+    print("Stauts not OK", result)
+  end
+
+  local position_id = 'require("neotest-elixir")._generate_id'
+  return lib.positions.parse_tree(positions, { position_id = position_id })
+  -- print("Got here", path)
+  -- else
+  --   return treesitter_discover_positions(path)
+  -- end
+end
+
+---@async
+---@return neotest.Tree | nil
+function ElixirNeotestAdapter.discover_positions(path)
+  local parse_mode = get_parse_mode()
+
+  if parse_mode == "treesitter" then
+    return treesitter_discover_positions(path)
+  elseif parse_mode == "ex_unit" then
+    return ex_unit_discover_posititons(path)
+  end
 end
 
 ---@async
