@@ -104,13 +104,16 @@ defmodule NeotestElixir.Formatter do
   end
 
   defp make_output(%ExUnit.Test{state: {:failed, failures}} = test, config) do
-    ExUnit.Formatter.format_test_failure(
-      test,
-      failures,
-      config.failure_counter,
-      80,
-      &formatter(&1, &2, config)
-    )
+    failures =
+      ExUnit.Formatter.format_test_failure(
+        test,
+        failures,
+        config.failure_counter,
+        80,
+        &formatter(&1, &2, config)
+      )
+
+    [failures, format_captured_logs(test.logs)]
   end
 
   defp make_output(%ExUnit.Test{state: {:skipped, due_to}}, _config) do
@@ -122,6 +125,14 @@ defmodule NeotestElixir.Formatter do
   end
 
   defp make_output(%ExUnit.Test{}, _config), do: nil
+
+  defp format_captured_logs(""), do: []
+
+  defp format_captured_logs(output) do
+    indent = "\n     "
+    output = String.replace(output, "\n", indent)
+    ["     The following output was logged:", indent | output]
+  end
 
   defp make_errors(%ExUnit.Test{state: {:failed, failures}} = test) do
     Enum.map(failures, fn failure ->
