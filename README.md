@@ -40,6 +40,11 @@ require("neotest").setup({
       -- Can be a function that receives the position, to return a dynamic value
       -- Default: {}
       args = {"--trace"},
+      -- Delays writes so that results are updated at most every given milliseconds
+      -- Decreasing this number improves snappiness at the cost of performance
+      -- Can be a function to return a dynamic value.
+      -- Default: 1000
+      write_delay = 1000,
     }),
   }
 })

@@ -52,6 +52,10 @@ local function get_args_from_position(position)
   end
 end
 
+local function get_write_delay()
+  return 1000
+end
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
@@ -141,6 +145,8 @@ function ElixirNeotestAdapter.build_spec(args)
 
   local stream_data, stop_stream = lib.files.stream_lines(results_path)
 
+  local write_delay = tostring(get_write_delay())
+
   return {
     command = command,
     context = {
@@ -168,6 +174,7 @@ function ElixirNeotestAdapter.build_spec(args)
     end,
     env = {
       NEOTEST_OUTPUT_DIR = output_dir,
+      NEOTEST_WRITE_DELAY = write_delay,
     },
   }
 end
@@ -222,6 +229,14 @@ setmetatable(ElixirNeotestAdapter, {
     elseif opts.args then
       get_args = function()
         return opts.args
+      end
+    end
+
+    if is_callable(opts.write_delay) then
+      get_write_delay = opts.write_delay
+    elseif opts.write_delay then
+      get_write_delay = function()
+        return opts.write_delay
       end
     end
 
