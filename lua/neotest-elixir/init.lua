@@ -72,7 +72,7 @@ local function get_relative_path(file_path)
   return table.concat({ unpack(elems, (#root_elems + 1), #elems) }, Path.path.sep)
 end
 
-local function generate_id(position)
+function ElixirNeotestAdapter._generate_id(position)
   local relative_path = get_relative_path(position.path)
   local line_num = (position.range[1] + 1)
   return (relative_path .. ":" .. line_num)
@@ -110,7 +110,8 @@ function ElixirNeotestAdapter.discover_positions(path)
   ) @test.definition
   ]]
 
-  return lib.treesitter.parse_positions(path, query, { position_id = generate_id })
+  local position_id = 'require("neotest-elixir")._generate_id'
+  return lib.treesitter.parse_positions(path, query, { position_id = position_id })
 end
 
 ---@async
