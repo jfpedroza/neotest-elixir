@@ -95,6 +95,7 @@ end
 ---@return neotest.Tree | nil
 function ElixirNeotestAdapter.discover_positions(path)
   local query = [[
+  ;; query
   ;; Describe blocks
   (call
     target: (identifier) @_target (#eq? @_target "describe")
@@ -108,6 +109,11 @@ function ElixirNeotestAdapter.discover_positions(path)
     (arguments ((string (quoted_content) @test.name)))
     (do_block)
   ) @test.definition
+
+  ;; Doctests
+  ;; The word doctest is included in the name to make it easier to notice
+  (call 
+    target: (identifier) @_target (#eq? @_target "doctest")) @test.name @test.definition
   ]]
 
   local position_id = 'require("neotest-elixir")._generate_id'
