@@ -91,6 +91,46 @@ function ElixirNeotestAdapter.is_test_file(file_path)
   return base.is_test_file(file_path)
 end
 
+local function get_match_type(captured_nodes)
+  if captured_nodes["test.name"] then
+    return "test"
+  end
+
+  if captured_nodes["dytest.name"] then
+    return "dytest"
+  end
+
+  if captured_nodes["namespace.name"] then
+    return "namespace"
+  end
+end
+
+local match_type_map = {
+  test = "test",
+  dytest = "test",
+  namespace = "namespace",
+}
+
+function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
+  local match_type = get_match_type(captured_nodes)
+  if match_type then
+    ---@type string
+    local name = vim.treesitter.get_node_text(captured_nodes[match_type .. ".name"], source)
+    local definition = captured_nodes[match_type .. ".definition"]
+
+    if match_type == "dytest" then
+      name = name:gsub('^"', ""):gsub('"$', "")
+    end
+
+    return {
+      type = match_type_map[match_type],
+      path = file_path,
+      name = name,
+      range = { definition:range() },
+    }
+  end
+end
+
 ---@async
 ---@return neotest.Tree | nil
 function ElixirNeotestAdapter.discover_positions(path)
@@ -99,25 +139,37 @@ function ElixirNeotestAdapter.discover_positions(path)
   ;; Describe blocks
   (call
     target: (identifier) @_target (#eq? @_target "describe")
-    (arguments ((string (quoted_content) @namespace.name)))
+    (arguments . (string (quoted_content) @namespace.name))
     (do_block)
   ) @namespace.definition
 
-  ;; Test blocks
+  ;; Test blocks (non-dynamic)
   (call
     target: (identifier) @_target (#eq? @_target "test")
-    (arguments ((string (quoted_content) @test.name)))
+    (arguments . (string . (quoted_content) @test.name .))
     (do_block)
   ) @test.definition
+
+  ;; Test blocks (dynamic)
+  (call
+    target: (identifier) @_target (#eq? @_target "test")
+    (arguments . [
+      (string (interpolation))
+      (identifier)
+    ] @dytest.name)
+    (do_block)
+  ) @dytest.definition
 
   ;; Doctests
   ;; The word doctest is included in the name to make it easier to notice
   (call 
-    target: (identifier) @_target (#eq? @_target "doctest")) @test.name @test.definition
+    target: (identifier) @_target (#eq? @_target "doctest")
+  ) @test.name @test.definition
   ]]
 
   local position_id = 'require("neotest-elixir")._generate_id'
-  return lib.treesitter.parse_positions(path, query, { position_id = position_id })
+  local build_position = 'require("neotest-elixir")._build_position'
+  return lib.treesitter.parse_positions(path, query, { position_id = position_id, build_position = build_position })
 end
 
 ---@async
