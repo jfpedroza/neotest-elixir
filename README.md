@@ -64,3 +64,7 @@ require("neotest").run.run({vim.fn.expand("%"), extra_args = {"--formatter", "Ex
 - [X] Handle dynamic tests like when you have for a loop that generates tests
 - [X] Show error in line with diagnostics
 - [X] Allow specifying extra formatters
+
+## Development
+
+In `tests/sample_proj` there is an Elixir project with to test that the adapter works
