@@ -84,7 +84,11 @@ local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_e
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
 function ElixirNeotestAdapter.filter_dir(_, rel_path, _)
-  return rel_path == "test" or vim.startswith(rel_path, "test/")
+  return rel_path == "test"
+    or vim.startswith(rel_path, "test/")
+    or rel_path == "apps"
+    or rel_path:match("^apps/[^/]+$")
+    or rel_path:match("^apps/[^/]+/test")
 end
 
 function ElixirNeotestAdapter.is_test_file(file_path)
