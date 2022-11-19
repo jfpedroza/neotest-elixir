@@ -34,21 +34,21 @@ end
 ---@param position neotest.Position
 ---@return string[]
 local function get_args_from_position(position)
-  if position.type == "dir" then
-    local root = ElixirNeotestAdapter.root(position.path)
-    local path = Path:new(position.path)
-    local relative = path:make_relative(root)
+  local root = ElixirNeotestAdapter.root(position.path)
+  local path = Path:new(position.path)
+  local relative = path:make_relative(root)
 
+  if position.type == "dir" then
     if relative == "." then
       return {}
     else
       return { relative }
     end
   elseif position.type == "file" then
-    return { position.path }
+    return { relative }
   else
     local line = position.range[1] + 1
-    return { position.path .. ":" .. line }
+    return { relative .. ":" .. line }
   end
 end
 
