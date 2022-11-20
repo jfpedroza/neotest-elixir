@@ -85,6 +85,7 @@ end
 local plugin_path = Path.new(script_path()):parent():parent()
 local json_encoder = (plugin_path / "neotest_elixir/json_encoder.ex").filename
 local exunit_formatter = (plugin_path / "neotest_elixir/formatter.ex").filename
+local mix_interactive_runner = (plugin_path / "neotest_elixir/test_interactive_runner.ex").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
@@ -181,21 +182,39 @@ function ElixirNeotestAdapter.discover_positions(path)
   return lib.treesitter.parse_positions(path, query, { position_id = position_id, build_position = build_position })
 end
 
+local function elixir_options(mix_task)
+  if mix_task == "test.interactive" then
+    return {
+      "-r",
+      mix_interactive_runner,
+      "-e",
+      "Application.put_env(:mix_test_interactive, :runner, NeotestElixir.TestInteractiveRunner)",
+    }
+  else
+    return {
+      "-r",
+      json_encoder,
+      "-r",
+      exunit_formatter,
+    }
+  end
+end
+
 ---@async
 ---@param args neotest.RunArgs
 ---@return neotest.RunSpec
 function ElixirNeotestAdapter.build_spec(args)
   local position = args.tree:data()
+  local mix_task = get_mix_task()
   local command = vim.tbl_flatten({
     {
       "elixir",
-      "-r",
-      json_encoder,
-      "-r",
-      exunit_formatter,
+    },
+    elixir_options(mix_task),
+    {
       "-S",
       "mix",
-      get_mix_task(),
+      mix_task,
     },
     get_formatters(),
     get_args(position),
@@ -243,6 +262,7 @@ function ElixirNeotestAdapter.build_spec(args)
     env = {
       NEOTEST_OUTPUT_DIR = output_dir,
       NEOTEST_WRITE_DELAY = write_delay,
+      NEOTEST_PLUGIN_PATH = tostring(plugin_path),
     },
   }
 end

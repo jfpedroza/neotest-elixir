@@ -60,6 +60,12 @@ require("neotest").setup({
 require("neotest").run.run({vim.fn.expand("%"), extra_args = {"--formatter", "ExUnitNotifier", "--timeout", "60"}}))
 ```
 
+## Integration with Elixir watchers
+
+The adapter supports `mix_test_interactive` to watch and run tests. Simply set `mix_task` to `test.interactive`.
+
+Caveats: When you save a file, there won't be any indicator that the tests are running again.
+
 ## TODO
 
 - [X] Store output in temp files directly from the ExUnit formatter

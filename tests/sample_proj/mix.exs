@@ -9,9 +9,9 @@ defmodule SampleProj.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       preferred_cli_env: [
-      "test.watch": :test,
-      "test.interactive": :test
-    ]
+        "test.watch": :test,
+        "test.interactive": :test
+      ]
     ]
   end
 
