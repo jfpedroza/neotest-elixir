@@ -56,6 +56,10 @@ local function get_write_delay()
   return 1000
 end
 
+local function get_mix_task()
+  return "test"
+end
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
@@ -166,7 +170,7 @@ function ElixirNeotestAdapter.discover_positions(path)
 
   ;; Doctests
   ;; The word doctest is included in the name to make it easier to notice
-  (call 
+  (call
     target: (identifier) @_target (#eq? @_target "doctest")
   ) @test.name @test.definition
   ]]
@@ -190,7 +194,7 @@ function ElixirNeotestAdapter.build_spec(args)
       exunit_formatter,
       "-S",
       "mix",
-      "test",
+      get_mix_task(),
     },
     get_formatters(),
     get_args(position),
@@ -277,30 +281,36 @@ local is_callable = function(obj)
   return type(obj) == "function" or (type(obj) == "table" and obj.__call)
 end
 
+local function callable_opt(opt)
+  if is_callable(opt) then
+    return opt
+  elseif opt then
+    return function()
+      return opt
+    end
+  end
+end
+
 setmetatable(ElixirNeotestAdapter, {
   __call = function(_, opts)
-    if is_callable(opts.extra_formatters) then
-      get_extra_formatters = opts.extra_formatters
-    elseif opts.extra_formatters then
-      get_extra_formatters = function()
-        return opts.extra_formatters
-      end
+    local mix_task = callable_opt(opts.mix_task)
+    if mix_task then
+      get_mix_task = mix_task
     end
 
-    if is_callable(opts.args) then
-      get_args = opts.args
-    elseif opts.args then
-      get_args = function()
-        return opts.args
-      end
+    local extra_formatters = callable_opt(opts.extra_formatters)
+    if extra_formatters then
+      get_extra_formatters = extra_formatters
     end
 
-    if is_callable(opts.write_delay) then
-      get_write_delay = opts.write_delay
-    elseif opts.write_delay then
-      get_write_delay = function()
-        return opts.write_delay
-      end
+    local args = callable_opt(opts.args)
+    if args then
+      get_args = args
+    end
+
+    local write_delay = callable_opt(opts.write_delay)
+    if write_delay then
+      get_write_delay = write_delay
     end
 
     return ElixirNeotestAdapter

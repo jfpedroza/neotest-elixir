@@ -17,7 +17,7 @@ defmodule NeotestElixir.Formatter do
     write_delay = String.to_integer(System.fetch_env!("NEOTEST_WRITE_DELAY"))
 
     results_io_device =
-      File.open!(results_path, [:write, {:delayed_write, 64 * 1000, write_delay}, :utf8])
+      File.open!(results_path, [:append, {:delayed_write, 64 * 1000, write_delay}, :utf8])
 
     config = %{
       output_dir: output_dir,

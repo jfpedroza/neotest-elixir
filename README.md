@@ -32,6 +32,10 @@ You can optionally specify some settings:
 require("neotest").setup({
   adapters = {
     require("neotest-elixir")({
+      -- The Mix task to use to run the tests
+      -- Can be a function to return a dynamic value.
+      -- Default: "test"
+      mix_task = {"my_custom_task"},
       -- Other formatters to pass to the test command as the formatters are overridden
       -- Can be a function to return a dynamic value.
       -- Default: {"ExUnit.CLIFormatter"}
