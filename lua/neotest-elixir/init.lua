@@ -82,8 +82,9 @@ function ElixirNeotestAdapter._generate_id(position)
   return (relative_path .. ":" .. line_num)
 end
 
-local json_encoder = (Path.new(script_path()):parent():parent() / "neotest_elixir/json_encoder.exs").filename
-local exunit_formatter = (Path.new(script_path()):parent():parent() / "neotest_elixir/neotest_formatter.exs").filename
+local plugin_path = Path.new(script_path()):parent():parent()
+local json_encoder = (plugin_path / "neotest_elixir/json_encoder.ex").filename
+local exunit_formatter = (plugin_path / "neotest_elixir/formatter.ex").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
