@@ -68,12 +68,7 @@ Caveats: When you save a file, there won't be any indicator that the tests are r
 
 ## TODO
 
-- [X] Store output in temp files directly from the ExUnit formatter
-- [X] Enable colors
-- [X] Support projects without a JSON library in the dependencies
-- [X] Handle dynamic tests like when you have for a loop that generates tests
-- [X] Show error in line with diagnostics
-- [X] Allow specifying extra formatters
+- [ ] Add integration with `mix-test.watch`
 
 ## Development
 
