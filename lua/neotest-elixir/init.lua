@@ -307,6 +307,7 @@ function ElixirNeotestAdapter.build_spec(args)
       end
     end,
     env = {
+      MIX_ENV = "test",
       NEOTEST_OUTPUT_DIR = output_dir,
       NEOTEST_WRITE_DELAY = write_delay,
       NEOTEST_PLUGIN_PATH = tostring(plugin_path),
