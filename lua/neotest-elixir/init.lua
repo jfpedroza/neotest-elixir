@@ -39,11 +39,7 @@ local function get_args_from_position(position)
   local relative = path:make_relative(root)
 
   if position.type == "dir" then
-    if relative == "." then
-      return {}
-    else
-      return { relative }
-    end
+    return { relative }
   elseif position.type == "file" then
     return { relative }
   else
@@ -99,6 +95,7 @@ local plugin_path = Path.new(script_path()):parent():parent()
 local json_encoder = (plugin_path / "neotest_elixir/json_encoder.ex").filename
 local exunit_formatter = (plugin_path / "neotest_elixir/formatter.ex").filename
 local mix_interactive_runner = (plugin_path / "neotest_elixir/test_interactive_runner.ex").filename
+local iex_runner = (plugin_path / "neotest_elixir/iex_runner.exs").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
@@ -229,13 +226,9 @@ local function elixir_options(mix_task)
   end
 end
 
----@async
----@param args neotest.RunArgs
----@return neotest.RunSpec
-function ElixirNeotestAdapter.build_spec(args)
-  local position = args.tree:data()
+local function make_integrated_command(args, position)
   local mix_task = get_mix_task()
-  local command = vim.tbl_flatten({
+  return vim.tbl_flatten({
     {
       "elixir",
     },
@@ -250,6 +243,30 @@ function ElixirNeotestAdapter.build_spec(args)
     args.extra_args or {},
     get_args_from_position(position),
   })
+end
+
+local function make_iex_command()
+  return vim.tbl_flatten({
+    { "elixir", "-r", json_encoder, "-r", exunit_formatter, "-S", "mix", "run", iex_runner },
+    get_formatters(),
+  })
+end
+
+---@async
+---@param args neotest.RunArgs
+---@return neotest.RunSpec
+function ElixirNeotestAdapter.build_spec(args)
+  local position = args.tree:data()
+  local command
+  local strategy
+  if args.strategy == "iex" then
+    command = make_iex_command()
+    strategy = {
+      test_args = get_args_from_position(position),
+    }
+  else
+    command = make_integrated_command(args, position)
+  end
 
   local output_dir = async.fn.tempname()
   Path:new(output_dir):mkdir()
@@ -270,6 +287,7 @@ function ElixirNeotestAdapter.build_spec(args)
       results_path = results_path,
       stop_stream = stop_stream,
     },
+    strategy = strategy,
     stream = function()
       return function()
         local lines = stream_data()
