@@ -16,7 +16,7 @@ local M = {
 
 local function make_output_path()
   local output_path = async.fn.tempname()
-  print(output_path)
+  print("Output path", output_path)
   local open_err, output_fd = async.uv.fs_open(output_path, "w", 438)
   assert(not open_err, open_err)
 
@@ -38,7 +38,6 @@ local function ensure_started(spec)
 
   M.finish_cond = async.control.Condvar.new()
   M.result_code = nil
-  print(vim.inspect(command))
   M.data_accum = FanoutAccum(function(prev, new)
     if not prev then
       return new
@@ -81,7 +80,7 @@ end
 
 local function write_test_args(spec)
   local test_args = spec.strategy.test_args
-  local input = table.concat(test_args, "  ")
+  local input = table.concat(test_args, " ")
   async.api.nvim_chan_send(M.job, input .. "\n")
 end
 
