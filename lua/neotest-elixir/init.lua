@@ -175,14 +175,14 @@ function ElixirNeotestAdapter.discover_positions(path)
 
   ;; Test blocks (non-dynamic)
   (call
-    target: (identifier) @_target (#eq? @_target "test")
+    target: (identifier) @_target (#any-of? @_target "test" "feature" "property")
     (arguments . (string . (quoted_content) @test.name .))
     (do_block)
   ) @test.definition
 
   ;; Test blocks (dynamic)
   (call
-    target: (identifier) @_target (#eq? @_target "test")
+    target: (identifier) @_target (#any-of? @_target "test" "feature" "property")
     (arguments . [
       (string (interpolation))
       (identifier)
