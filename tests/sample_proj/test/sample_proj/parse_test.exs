@@ -4,6 +4,7 @@ defmodule SampleProj.ParseTest do
   doctest SampleProj
 
   test "a test without describe" do
+    IO.puts("This is some output, where is it?")
     assert SampleProj.hello() == :world
   end
 

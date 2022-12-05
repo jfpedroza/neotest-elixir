@@ -155,7 +155,17 @@ defmodule NeotestElixir.Formatter do
     "Excluded #{due_to}"
   end
 
-  defp make_output(%ExUnit.Test{}, _config), do: nil
+  defp make_output(%ExUnit.Test{state: {:invalid, module}}, _config) do
+    "Test is invalid. `setup_all` for #{inspect(module.name)} failed"
+  end
+
+  defp make_output(%ExUnit.Test{state: nil} = test, config) do
+    if dynamic?(test, config) do
+      "#{test.name} passed in #{format_us(test.time)}ms"
+    else
+      "Test passed in #{format_us(test.time)}ms"
+    end
+  end
 
   defp format_captured_logs(""), do: []
 
@@ -225,6 +235,18 @@ defmodule NeotestElixir.Formatter do
   end
 
   defp line_from_stack_entry(nil), do: nil
+
+  # Format us as ms, from CLIFormatter
+  defp format_us(us) do
+    us = div(us, 10)
+
+    if us < 10 do
+      "0.0#{us}"
+    else
+      us = div(us, 10)
+      "#{div(us, 10)}.#{rem(us, 10)}"
+    end
+  end
 
   # Color styles, copied from CLIFormatter
 
