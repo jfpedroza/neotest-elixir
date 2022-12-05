@@ -76,10 +76,23 @@ local function get_relative_path(file_path)
   return table.concat({ unpack(elems, (#root_elems + 1), #elems) }, Path.path.sep)
 end
 
-function ElixirNeotestAdapter._generate_id(position)
-  local relative_path = get_relative_path(position.path)
-  local line_num = (position.range[1] + 1)
-  return (relative_path .. ":" .. line_num)
+function ElixirNeotestAdapter._generate_id(position, parents)
+  if position.dynamic then
+    local relative_path = get_relative_path(position.path)
+    local line_num = (position.range[1] + 1)
+    return (relative_path .. ":" .. line_num)
+  else
+    return table.concat(
+      vim.tbl_flatten({
+        position.path,
+        vim.tbl_map(function(pos)
+          return pos.name
+        end, parents),
+        position.name,
+      }),
+      "::"
+    )
+  end
 end
 
 local plugin_path = Path.new(script_path()):parent():parent()
@@ -127,9 +140,11 @@ function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
     ---@type string
     local name = vim.treesitter.get_node_text(captured_nodes[match_type .. ".name"], source)
     local definition = captured_nodes[match_type .. ".definition"]
+    local dynamic = false
 
     if match_type == "dytest" then
       name = name:gsub('^"', ""):gsub('"$', "")
+      dynamic = true
     end
 
     return {
@@ -137,6 +152,7 @@ function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
       path = file_path,
       name = name,
       range = { definition:range() },
+      dynamic = dynamic,
     }
   end
 end

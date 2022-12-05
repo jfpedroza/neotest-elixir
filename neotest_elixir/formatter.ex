@@ -46,7 +46,7 @@ defmodule NeotestElixir.Formatter do
         |> update_test_counter()
         |> update_failure_counter(test)
 
-      id = make_id(test)
+      id = make_id(test, config)
 
       output = %{
         id: id,
@@ -108,8 +108,32 @@ defmodule NeotestElixir.Formatter do
 
   defp update_failure_counter(config, %ExUnit.Test{}), do: config
 
-  defp make_id(%ExUnit.Test{tags: tags} = _test) do
-    "#{Path.relative_to_cwd(tags[:file])}:#{tags[:line]}"
+  defp make_id(%ExUnit.Test{tags: tags} = test, config) do
+    if dynamic?(test, config) do
+      "#{Path.relative_to_cwd(tags[:file])}:#{tags[:line]}"
+    else
+      file = test.tags.file
+      name = remove_prefix(test)
+
+      if describe = test.tags.describe do
+        "#{file}::#{describe}::#{name}"
+      else
+        "#{file}::#{name}"
+      end
+    end
+  end
+
+  defp remove_prefix(%ExUnit.Test{} = test) do
+    name = to_string(test.name)
+
+    prefix =
+      if test.tags.describe do
+        "#{test.tags.test_type} #{test.tags.describe} "
+      else
+        "#{test.tags.test_type} "
+      end
+
+    String.replace_prefix(name, prefix, "")
   end
 
   defp make_status(%ExUnit.Test{state: nil}), do: "passed"
