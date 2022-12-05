@@ -25,10 +25,17 @@ defmodule NeotestElixir.Formatter do
       results_io_device: results_io_device,
       colors: colors(opts),
       test_counter: 0,
-      failure_counter: 0
+      failure_counter: 0,
+      tests: %{}
     }
 
     {:ok, config}
+  end
+
+  @impl true
+  def handle_cast({:module_started, %ExUnit.TestModule{} = test_module}, config) do
+    config = add_test_module(config, test_module)
+    {:noreply, config}
   end
 
   @impl true
@@ -67,6 +74,30 @@ defmodule NeotestElixir.Formatter do
     {:noreply, config}
   end
 
+  defp add_test_module(config, %ExUnit.TestModule{} = test_module) do
+    tests =
+      test_module.tests
+      |> Enum.group_by(& &1.tags.line)
+      |> Enum.flat_map(fn
+        {_, [test]} ->
+          [{{test.module, test.name}, %{dynamic?: false}}]
+
+        {_, tests} ->
+          Enum.map(tests, fn test ->
+            {{test.module, test.name}, %{dynamic?: true}}
+          end)
+      end)
+      |> Map.new()
+
+    update_in(config.tests, &Map.merge(&1, tests))
+  end
+
+  defp get_test_config(%ExUnit.Test{} = test, config) do
+    Map.fetch!(config.tests, {test.module, test.name})
+  end
+
+  defp dynamic?(%ExUnit.Test{} = test, config), do: get_test_config(test, config).dynamic?
+
   defp update_test_counter(config) do
     %{config | test_counter: config.test_counter + 1}
   end
@@ -93,7 +124,7 @@ defmodule NeotestElixir.Formatter do
     if output do
       file = Path.join(config.output_dir, "test_output_#{:erlang.phash2(id)}")
 
-      if File.exists?(file) do
+      if dynamic?(test, config) and File.exists?(file) do
         File.write!(file, ["\n\n", output], [:append])
       else
         File.write!(file, output)
