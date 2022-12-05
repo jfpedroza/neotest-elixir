@@ -46,12 +46,12 @@ defmodule NeotestElixir.Formatter do
         |> update_test_counter()
         |> update_failure_counter(test)
 
-      id = make_id(test, config)
+      id = get_test_config(test, config).id
 
       output = %{
         id: id,
         status: make_status(test),
-        output: save_test_output(test, config, id),
+        output: save_test_output(test, config),
         errors: make_errors(test)
       }
 
@@ -78,13 +78,24 @@ defmodule NeotestElixir.Formatter do
     tests =
       test_module.tests
       |> Enum.group_by(& &1.tags.line)
-      |> Enum.flat_map(fn
-        {_, [test]} ->
-          [{{test.module, test.name}, %{dynamic?: false}}]
-
+      |> Stream.flat_map(fn
         {_, tests} ->
-          Enum.map(tests, fn test ->
-            {{test.module, test.name}, %{dynamic?: true}}
+          single_test? =
+            case tests do
+              [_] -> true
+              [_ | _] -> false
+            end
+
+          Stream.map(tests, fn test ->
+            # Doctests are handled as dynamic even if it's a single test
+            dynamic? = test.tags.test_type == :doctest or not single_test?
+            id = make_id(dynamic?, test)
+            output_file = Path.join(config.output_dir, "test_output_#{:erlang.phash2(id)}")
+            # The file may exist in some cases (multiple runs with the same output dir)
+            File.rm(output_file)
+            test_config = %{id: id, dynamic?: dynamic?, output_file: output_file}
+
+            {{test.module, test.name}, test_config}
           end)
       end)
       |> Map.new()
@@ -108,18 +119,18 @@ defmodule NeotestElixir.Formatter do
 
   defp update_failure_counter(config, %ExUnit.Test{}), do: config
 
-  defp make_id(%ExUnit.Test{tags: tags} = test, config) do
-    if dynamic?(test, config) do
-      "#{Path.relative_to_cwd(tags[:file])}:#{tags[:line]}"
-    else
-      file = test.tags.file
-      name = remove_prefix(test)
+  defp make_id(true = _dynamic?, %ExUnit.Test{tags: tags}) do
+    "#{Path.relative_to_cwd(tags[:file])}:#{tags[:line]}"
+  end
 
-      if describe = test.tags.describe do
-        "#{file}::#{describe}::#{name}"
-      else
-        "#{file}::#{name}"
-      end
+  defp make_id(false, %ExUnit.Test{} = test) do
+    file = test.tags.file
+    name = remove_prefix(test)
+
+    if describe = test.tags.describe do
+      "#{file}::#{describe}::#{name}"
+    else
+      "#{file}::#{name}"
     end
   end
 
@@ -142,13 +153,13 @@ defmodule NeotestElixir.Formatter do
   defp make_status(%ExUnit.Test{state: {:excluded, _}}), do: "skipped"
   defp make_status(%ExUnit.Test{state: {:invalid, _}}), do: "failed"
 
-  defp save_test_output(%ExUnit.Test{} = test, config, id) do
+  defp save_test_output(%ExUnit.Test{} = test, config) do
     output = make_output(test, config)
 
     if output do
-      file = Path.join(config.output_dir, "test_output_#{:erlang.phash2(id)}")
+      file = get_test_config(test, config).output_file
 
-      if dynamic?(test, config) and File.exists?(file) do
+      if File.exists?(file) do
         File.write!(file, ["\n\n", output], [:append])
       else
         File.write!(file, output)

@@ -147,6 +147,10 @@ function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
       dynamic = true
     end
 
+    if vim.startswith(name, "doctest ") then
+      dynamic = true
+    end
+
     return {
       type = match_type_map[match_type],
       path = file_path,
