@@ -60,6 +60,10 @@ local function get_mix_task()
   return "test"
 end
 
+local function get_post_process_command(cmd)
+  return cmd
+end
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
@@ -104,10 +108,10 @@ ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
 function ElixirNeotestAdapter.filter_dir(_, rel_path, _)
   return rel_path == "test"
-    or vim.startswith(rel_path, "test/")
-    or rel_path == "apps"
-    or rel_path:match("^apps/[^/]+$")
-    or rel_path:match("^apps/[^/]+/test")
+      or vim.startswith(rel_path, "test/")
+      or rel_path == "apps"
+      or rel_path:match("^apps/[^/]+$")
+      or rel_path:match("^apps/[^/]+/test")
 end
 
 function ElixirNeotestAdapter.is_test_file(file_path)
@@ -250,6 +254,7 @@ function ElixirNeotestAdapter.build_spec(args)
     args.extra_args or {},
     get_args_from_position(position),
   })
+  local post_processed_command = get_post_process_command(command)
 
   local output_dir = async.fn.tempname()
   Path:new(output_dir):mkdir()
@@ -264,7 +269,7 @@ function ElixirNeotestAdapter.build_spec(args)
   local write_delay = tostring(get_write_delay())
 
   return {
-    command = command,
+    command = post_processed_command,
     context = {
       position = position,
       results_path = results_path,
@@ -343,6 +348,11 @@ end
 
 setmetatable(ElixirNeotestAdapter, {
   __call = function(_, opts)
+    local post_process_command = callable_opt(opts.post_process_command)
+    if post_process_command then
+      get_post_process_command = post_process_command()
+    end
+
     local mix_task = callable_opt(opts.mix_task)
     if mix_task then
       get_mix_task = mix_task
