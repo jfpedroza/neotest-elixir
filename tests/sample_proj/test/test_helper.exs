@@ -1,1 +1,1 @@
-ExUnit.start(formatters: [ExUnit.CLIFormatter, ExUnitNotifier])
+ExUnit.start(formatters: [ExUnit.CLIFormatter, ExUnitNotifier], exclude: [:special])

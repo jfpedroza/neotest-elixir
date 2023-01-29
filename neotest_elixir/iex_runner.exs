@@ -1,10 +1,13 @@
 defmodule NeotestElixir.IExRunner do
   def run do
-    config = parse_args(System.argv())
-    setup_exunit(config)
+    config =
+      System.argv()
+      |> parse_args()
+      |> setup_exunit()
+
     Code.compiler_options(ignore_module_conflict: true)
 
-    loop()
+    loop(config)
   end
 
   defp parse_args(argv) do
@@ -25,10 +28,12 @@ defmodule NeotestElixir.IExRunner do
       Code.eval_file("test/test_helper.exs", File.cwd!())
     end
 
+    excludes = Keyword.fetch!(ExUnit.configuration(), :exclude)
     ExUnit.configure(autorun: false, formatters: config.formatters)
+    Map.put(config, :excludes, excludes)
   end
 
-  defp loop do
+  defp loop(config) do
     case IO.read(:line) do
       :eof ->
         :ok
@@ -38,19 +43,19 @@ defmodule NeotestElixir.IExRunner do
 
       chardata ->
         data = IO.chardata_to_string(chardata)
-        handle_input(String.trim(data))
-        loop()
+        handle_input(String.trim(data), config)
+        loop(config)
     end
   end
 
-  defp handle_input(input) do
+  defp handle_input(input, config) do
     case String.split(input, ":", trim: true) do
       [file, line] ->
         configure_line(line)
         test_files([file])
 
       [path] ->
-        reset_includes()
+        reset_includes(config)
 
         path
         |> expand_paths()
@@ -62,8 +67,8 @@ defmodule NeotestElixir.IExRunner do
     ExUnit.configure(exclude: [:test], include: [line: line])
   end
 
-  defp reset_includes do
-    ExUnit.configure(exclude: [], include: [])
+  defp reset_includes(config) do
+    ExUnit.configure(exclude: config.excludes, include: [])
   end
 
   defp expand_paths(path) do
