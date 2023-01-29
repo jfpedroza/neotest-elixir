@@ -16,6 +16,14 @@ defmodule SampleProj.ParseTest do
     test "test with a context", %{} do
       assert SampleProj.hello() == :world
     end
+
+    test ~s(with the s sigil) do
+      assert SampleProj.hello() == :world
+    end
+
+    test ~S(with the S sigil) do
+      assert SampleProj.hello() == :world
+    end
   end
 
   describe "dynamic tests" do
@@ -40,6 +48,10 @@ defmodule SampleProj.ParseTest do
         test "#{i} nested #{j} test" do
           assert SampleProj.hello() == :world
         end
+      end
+
+      test ~s(with the s sigil #{i}) do
+        assert SampleProj.hello() == :world
       end
     end
 

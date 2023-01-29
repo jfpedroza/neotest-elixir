@@ -143,7 +143,11 @@ function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
     local dynamic = false
 
     if match_type == "dytest" then
-      name = name:gsub('^"', ""):gsub('"$', "")
+      if vim.startswith(name, "~") then
+        name = name:sub(4, #name - 1)
+      else
+        name = name:gsub('^"', ""):gsub('"$', "")
+      end
       dynamic = true
     end
 
@@ -176,7 +180,11 @@ function ElixirNeotestAdapter.discover_positions(path)
   ;; Test blocks (non-dynamic)
   (call
     target: (identifier) @_target (#any-of? @_target "test" "feature" "property")
-    (arguments . (string . (quoted_content) @test.name .))
+    (arguments . [
+      (string . (quoted_content) @test.name .) ;; Simple string
+      (sigil . (sigil_name) @_sigil_name . (quoted_content) @test.name .) (#any-of? @_sigil_name "s" "S") ;; Sigil ~s and ~S, no interpolations
+    ]
+    )
     (do_block)
   ) @test.definition
 
@@ -184,8 +192,9 @@ function ElixirNeotestAdapter.discover_positions(path)
   (call
     target: (identifier) @_target (#any-of? @_target "test" "feature" "property")
     (arguments . [
-      (string (interpolation))
-      (identifier)
+      (string (interpolation)) ;; String with interpolations
+      (identifier) ;; Single variable as name
+      (sigil . (sigil_name) @_sigil_name (interpolation)) (#any-of? @_sigil_name "s") ;; Sigil ~s, with interpolations
     ] @dytest.name)
     (do_block)
   ) @dytest.definition
