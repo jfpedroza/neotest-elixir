@@ -44,6 +44,17 @@ require("neotest").setup({
       -- Can be a function that receives the position, to return a dynamic value
       -- Default: {}
       args = {"--trace"},
+      -- Command wrapper
+      -- Can be a function that receives the mix command as a table, to return a dynamic value
+      -- Default: function() return function(cmd) return cmd end end
+      post_process_cmd = function()
+        return function(cmd)
+          local newcmd = cmd
+          table.insert(newcmd, 1, 'env')
+          table.insert(newcmd, 2, 'MIX_ENV=foo')
+          return cmd
+        end
+      end,
       -- Delays writes so that results are updated at most every given milliseconds
       -- Decreasing this number improves snappiness at the cost of performance
       -- Can be a function to return a dynamic value.
