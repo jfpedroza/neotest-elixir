@@ -60,7 +60,7 @@ local function get_mix_task()
   return "test"
 end
 
-local function get_post_process_command(cmd)
+local function post_process_command(cmd)
   return cmd
 end
 
@@ -254,8 +254,8 @@ function ElixirNeotestAdapter.build_spec(args)
     args.extra_args or {},
     get_args_from_position(position),
   })
-  local post_processed_command = get_post_process_command(command)
 
+  local post_processed_command = post_process_command(command)
   local output_dir = async.fn.tempname()
   Path:new(output_dir):mkdir()
   local results_path = output_dir .. "/results"
@@ -348,9 +348,8 @@ end
 
 setmetatable(ElixirNeotestAdapter, {
   __call = function(_, opts)
-    local post_process_command = callable_opt(opts.post_process_command)
-    if post_process_command then
-      get_post_process_command = post_process_command()
+    if opts.post_process_command and type(opts.post_process_command) == "function" then
+      post_process_command = opts.post_process_command
     end
 
     local mix_task = callable_opt(opts.mix_task)
