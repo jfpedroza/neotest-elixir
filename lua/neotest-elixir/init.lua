@@ -60,6 +60,10 @@ local function get_mix_task()
   return "test"
 end
 
+local function post_process_command(cmd)
+  return cmd
+end
+
 local function script_path()
   local str = debug.getinfo(2, "S").source:sub(2)
   return str:match("(.*/)")
@@ -251,6 +255,7 @@ function ElixirNeotestAdapter.build_spec(args)
     get_args_from_position(position),
   })
 
+  local post_processed_command = post_process_command(command)
   local output_dir = async.fn.tempname()
   Path:new(output_dir):mkdir()
   local results_path = output_dir .. "/results"
@@ -264,7 +269,7 @@ function ElixirNeotestAdapter.build_spec(args)
   local write_delay = tostring(get_write_delay())
 
   return {
-    command = command,
+    command = post_processed_command,
     context = {
       position = position,
       results_path = results_path,
@@ -343,6 +348,10 @@ end
 
 setmetatable(ElixirNeotestAdapter, {
   __call = function(_, opts)
+    if opts.post_process_command and type(opts.post_process_command) == "function" then
+      post_process_command = opts.post_process_command
+    end
+
     local mix_task = callable_opt(opts.mix_task)
     if mix_task then
       get_mix_task = mix_task
