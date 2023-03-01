@@ -10,16 +10,16 @@ defmodule NeotestElixir.Formatter do
 
   @impl true
   def init(opts) do
-    output_dir = System.fetch_env!("NEOTEST_OUTPUT_DIR")
+    output_dir = opts[:output_dir] || System.fetch_env!("NEOTEST_OUTPUT_DIR")
     File.mkdir_p!(output_dir)
     results_path = Path.join(output_dir, "results")
-
-    write_delay = String.to_integer(System.fetch_env!("NEOTEST_WRITE_DELAY"))
+    write_delay = String.to_integer(System.get_env("NEOTEST_WRITE_DELAY") || "100")
 
     results_io_device =
       File.open!(results_path, [:append, {:delayed_write, 64 * 1000, write_delay}, :utf8])
 
     config = %{
+      seed: opts[:seed],
       output_dir: output_dir,
       results_path: results_path,
       results_io_device: results_io_device,
@@ -49,6 +49,7 @@ defmodule NeotestElixir.Formatter do
       id = get_test_config(test, config).id
 
       output = %{
+        seed: config[:seed],
         id: id,
         status: make_status(test),
         output: save_test_output(test, config),

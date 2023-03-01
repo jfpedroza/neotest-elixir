@@ -2,54 +2,18 @@ local Path = require("plenary.path")
 local async = require("neotest.async")
 local lib = require("neotest.lib")
 local base = require("neotest-elixir.base")
+local core = require("neotest-elixir.core")
 local logger = require("neotest.logging")
 
 ---@type neotest.Adapter
 local ElixirNeotestAdapter = { name = "neotest-elixir" }
 
-local default_formatters = { "NeotestElixir.Formatter" }
-
 local function get_extra_formatters()
   return { "ExUnit.CLIFormatter" }
 end
 
-local function get_formatters()
-  -- tables need to be copied by value
-  local formatters = { unpack(default_formatters) }
-  vim.list_extend(formatters, get_extra_formatters())
-
-  local result = {}
-  for _, formatter in ipairs(formatters) do
-    table.insert(result, "--formatter")
-    table.insert(result, formatter)
-  end
-
-  return result
-end
-
-local function get_args(_)
+local function get_mix_task_args()
   return {}
-end
-
----@param position neotest.Position
----@return string[]
-local function get_args_from_position(position)
-  local root = ElixirNeotestAdapter.root(position.path)
-  local path = Path:new(position.path)
-  local relative = path:make_relative(root)
-
-  if position.type == "dir" then
-    if relative == "." then
-      return {}
-    else
-      return { relative }
-    end
-  elseif position.type == "file" then
-    return { relative }
-  else
-    local line = position.range[1] + 1
-    return { relative .. ":" .. line }
-  end
 end
 
 local function get_write_delay()
@@ -62,11 +26,6 @@ end
 
 local function post_process_command(cmd)
   return cmd
-end
-
-local function script_path()
-  local str = debug.getinfo(2, "S").source:sub(2)
-  return str:match("(.*/)")
 end
 
 local function mix_root(file_path)
@@ -98,11 +57,6 @@ function ElixirNeotestAdapter._generate_id(position, parents)
     )
   end
 end
-
-local plugin_path = Path.new(script_path()):parent():parent()
-local json_encoder = (plugin_path / "neotest_elixir/json_encoder.ex").filename
-local exunit_formatter = (plugin_path / "neotest_elixir/formatter.ex").filename
-local mix_interactive_runner = (plugin_path / "neotest_elixir/test_interactive_runner.ex").filename
 
 ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
 
@@ -215,61 +169,39 @@ function ElixirNeotestAdapter.discover_positions(path)
   return lib.treesitter.parse_positions(path, query, { position_id = position_id, build_position = build_position })
 end
 
-local function elixir_options(mix_task)
-  if mix_task == "test.interactive" then
-    return {
-      "-r",
-      mix_interactive_runner,
-      "-e",
-      "Application.put_env(:mix_test_interactive, :runner, NeotestElixir.TestInteractiveRunner)",
-    }
-  else
-    return {
-      "-r",
-      json_encoder,
-      "-r",
-      exunit_formatter,
-    }
-  end
-end
-
 ---@async
 ---@param args neotest.RunArgs
 ---@return neotest.RunSpec
 function ElixirNeotestAdapter.build_spec(args)
   local position = args.tree:data()
-  local mix_task = get_mix_task()
-  local command = vim.tbl_flatten({
-    {
-      "elixir",
-    },
-    elixir_options(mix_task),
-    {
-      "-S",
-      "mix",
-      mix_task,
-    },
-    get_formatters(),
-    get_args(position),
-    args.extra_args or {},
-    get_args_from_position(position),
-  })
 
-  local post_processed_command = post_process_command(command)
+  -- create the results directory and empty file
   local output_dir = async.fn.tempname()
   Path:new(output_dir):mkdir()
   local results_path = output_dir .. "/results"
+  local maybe_compile_error_path = output_dir .. "/compile_error"
   logger.debug("result path: " .. results_path)
-  local x = io.open(results_path, "w")
-  x:write("")
-  x:close()
+  core.create_and_clear(results_path)
+  core.create_and_clear(maybe_compile_error_path)
+
+  local post_processing_command
+  if args.strategy == "iex" then
+    local MAGIC_IEX_TERM_ID = 42
+    local term = core.get_or_create_iex_term(MAGIC_IEX_TERM_ID)
+    local seed = core.generate_seed()
+    local test_command = core.build_iex_test_command(position, output_dir, seed)
+    term:send(test_command, true)
+    post_processing_command = core.iex_watch_command(results_path, maybe_compile_error_path, seed)
+  else
+    local command = core.build_mix_command(position, get_mix_task, get_extra_formatters, get_mix_task_args, args)
+    post_processing_command = post_process_command(command)
+  end
 
   local stream_data, stop_stream = lib.files.stream_lines(results_path)
-
   local write_delay = tostring(get_write_delay())
 
   return {
-    command = post_processed_command,
+    command = post_processing_command,
     context = {
       position = position,
       results_path = results_path,
@@ -296,7 +228,7 @@ function ElixirNeotestAdapter.build_spec(args)
     env = {
       NEOTEST_OUTPUT_DIR = output_dir,
       NEOTEST_WRITE_DELAY = write_delay,
-      NEOTEST_PLUGIN_PATH = tostring(plugin_path),
+      NEOTEST_PLUGIN_PATH = tostring(core.plugin_path),
     },
   }
 end
@@ -364,7 +296,7 @@ setmetatable(ElixirNeotestAdapter, {
 
     local args = callable_opt(opts.args)
     if args then
-      get_args = args
+      get_mix_task_args = args
     end
 
     local write_delay = callable_opt(opts.write_delay)
