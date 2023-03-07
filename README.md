@@ -53,7 +53,7 @@ require("neotest").setup({
       -- Must be a function that receives the mix command as a table, to return a dynamic value
       -- Default: function(cmd) return cmd end
       post_process_command = function(cmd)
-        return vim.tbl_flatten({"env", "FOO=bar"}, cmd})
+        return vim.tbl_flatten({{"env", "FOO=bar"}, cmd})
       end,
       -- Delays writes so that results are updated at most every given milliseconds
       -- Decreasing this number improves snappiness at the cost of performance
