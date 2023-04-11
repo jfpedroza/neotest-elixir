@@ -1,5 +1,10 @@
+local ok, async = pcall(require, "nio")
+if not ok then
+  print("use plenary")
+  async = require("neotest.async")
+end
+
 local Path = require("plenary.path")
-local async = require("neotest.async")
 local lib = require("neotest.lib")
 local base = require("neotest-elixir.base")
 local core = require("neotest-elixir.core")
