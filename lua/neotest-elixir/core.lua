@@ -191,9 +191,10 @@ function M.get_or_create_iex_term(id, direction_func)
 
   local toggleterm_terminal = require("toggleterm.terminal")
   local term = toggleterm_terminal.get(id)
+  local direction = direction_func and direction_func()
 
   if term == nil then
-    toggleterm.exec(M.iex_start_command(), id, nil, nil, "horizontal")
+    toggleterm.exec(M.iex_start_command(), id, nil, nil, direction)
     term = toggleterm_terminal.get_or_create_term(id)
     return term
   else

@@ -24,6 +24,10 @@ local function get_mix_task()
   return "test"
 end
 
+local function get_iex_shell_direction()
+  return "horizontal"
+end
+
 local function post_process_command(cmd)
   return cmd
 end
@@ -187,7 +191,7 @@ function ElixirNeotestAdapter.build_spec(args)
   local post_processing_command
   if args.strategy == "iex" then
     local MAGIC_IEX_TERM_ID = 42
-    local term = core.get_or_create_iex_term(MAGIC_IEX_TERM_ID)
+    local term = core.get_or_create_iex_term(MAGIC_IEX_TERM_ID, get_iex_shell_direction)
     local seed = core.generate_seed()
     local test_command = core.build_iex_test_command(position, output_dir, seed)
     term:send(test_command, true)
@@ -287,6 +291,11 @@ setmetatable(ElixirNeotestAdapter, {
     local mix_task = callable_opt(opts.mix_task)
     if mix_task then
       get_mix_task = mix_task
+    end
+
+    local iex_shell_direction = callable_opt(opts.iex_shell_direction)
+    if iex_shell_direction then
+      get_iex_shell_direction = iex_shell_direction
     end
 
     local extra_formatters = callable_opt(opts.extra_formatters)
