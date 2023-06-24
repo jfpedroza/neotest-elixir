@@ -155,7 +155,7 @@ defmodule NeotestElixir.Formatter do
   defp make_status(%ExUnit.Test{state: {:invalid, _}}), do: "failed"
 
   defp save_test_output(%ExUnit.Test{} = test, config) do
-    output = make_output(test, config)
+    output = [make_output(test, config), "\n"]
 
     if output do
       file = get_test_config(test, config).output_file
