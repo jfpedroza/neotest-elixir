@@ -158,7 +158,7 @@ function M.iex_start_command(opened_filename)
   local start_code = "IExUnit.start()"
   local configuration_code = "ExUnit.configure(formatters: [NeotestElixir.Formatter, ExUnit.CLIFormatter])"
   local start_command = string.format(
-    "MIX_ENV=test iex --no-pry -S mix run -r %q -r %q -r %q -e %q -e %q",
+    "MIX_ENV=test iex -S mix run -r %q -r %q -r %q -e %q -e %q",
     M.json_encoder_path,
     M.exunit_formatter_path,
     runner_path,
