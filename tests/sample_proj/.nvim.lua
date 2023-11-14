@@ -1,4 +1,3 @@
-lua << EOF
 if not pcall(require, "neotest") then
   return
 end
@@ -10,4 +9,3 @@ vim.schedule(function()
     },
   })
 end)
-EOF
