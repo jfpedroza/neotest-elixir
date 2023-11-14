@@ -40,6 +40,11 @@ require("neotest").setup({
       -- Can be a function to return a dynamic value.
       -- Default: {"ExUnit.CLIFormatter"}
       extra_formatters = {"ExUnit.CLIFormatter", "ExUnitNotifier"},
+      -- Extra test block identifiers
+      -- Can be a function to return a dynamic value.
+      -- Block identifiers "test", "feature" and "property" are always supported by default.
+      -- Default: {}
+      extra_block_identifiers = {"test_with_mock"},
       -- Extra arguments to pass to mix test
       -- Can be a function that receives the position, to return a dynamic value
       -- Default: {}
@@ -48,7 +53,7 @@ require("neotest").setup({
       -- Must be a function that receives the mix command as a table, to return a dynamic value
       -- Default: function(cmd) return cmd end
       post_process_command = function(cmd)
-        return vim.tbl_flatten({"env", "FOO=bar"}, cmd})
+        return vim.tbl_flatten({{"env", "FOO=bar"}, cmd})
       end,
       -- Delays writes so that results are updated at most every given milliseconds
       -- Decreasing this number improves snappiness at the cost of performance

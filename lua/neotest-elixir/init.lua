@@ -21,6 +21,9 @@ local function get_mix_task_args()
   return {}
 end
 
+local function get_extra_block_identifiers()
+  return {}
+end
 local function get_write_delay()
   return 1000
 end
@@ -135,6 +138,11 @@ end
 ---@async
 ---@return neotest.Tree | nil
 function ElixirNeotestAdapter.discover_positions(path)
+  local test_block_id_list = vim.tbl_flatten({ { "test", "feature", "property" }, get_extra_block_identifiers() })
+  for index, value in ipairs(test_block_id_list) do
+    test_block_id_list[index] = '"' .. value .. '"'
+  end
+  local test_block_ids = table.concat(test_block_id_list, " ")
   local query = [[
   ;; query
   ;; Describe blocks
@@ -146,7 +154,7 @@ function ElixirNeotestAdapter.discover_positions(path)
 
   ;; Test blocks (non-dynamic)
   (call
-    target: (identifier) @_target (#any-of? @_target "test" "feature" "property")
+    target: (identifier) @_target (#any-of? @_target ]] .. test_block_ids .. [[)
     (arguments . [
       (string . (quoted_content) @test.name .) ;; Simple string
       (sigil . (sigil_name) @_sigil_name . (quoted_content) @test.name .) (#any-of? @_sigil_name "s" "S") ;; Sigil ~s and ~S, no interpolations
@@ -157,7 +165,7 @@ function ElixirNeotestAdapter.discover_positions(path)
 
   ;; Test blocks (dynamic)
   (call
-    target: (identifier) @_target (#any-of? @_target "test" "feature" "property")
+    target: (identifier) @_target (#any-of? @_target ]] .. test_block_ids .. [[)
     (arguments . [
       (string (interpolation)) ;; String with interpolations
       (identifier) ;; Single variable as name
@@ -306,6 +314,11 @@ setmetatable(ElixirNeotestAdapter, {
     local extra_formatters = callable_opt(opts.extra_formatters)
     if extra_formatters then
       get_extra_formatters = extra_formatters
+    end
+
+    local extra_block_identifiers = callable_opt(opts.extra_block_identifiers)
+    if extra_block_identifiers then
+      get_extra_block_identifiers = extra_block_identifiers
     end
 
     local args = callable_opt(opts.args)
