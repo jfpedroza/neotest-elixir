@@ -126,7 +126,7 @@ defmodule NeotestElixir.Formatter do
 
   defp make_id(false, %ExUnit.Test{} = test) do
     file = test.tags.file
-    name = remove_prefix(test)
+    name = remove_prefix(test) |> String.replace("\n", " ")
 
     if describe = test.tags.describe do
       "#{file}::#{describe}::#{name}"

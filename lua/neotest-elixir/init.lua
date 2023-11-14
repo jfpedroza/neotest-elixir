@@ -104,6 +104,47 @@ local match_type_map = {
   namespace = "namespace",
 }
 
+local function remove_heredoc_prefix(name)
+  local lines = vim.split(name, "\n")
+  local common_spaces = 1000
+  for _, line in ipairs(lines) do
+    local spaces = 0
+    for i = 1, line:len() do
+      if line:sub(i, i) == " " then
+        spaces = spaces + 1
+      else
+        break
+      end
+    end
+
+    if spaces < common_spaces then
+      common_spaces = spaces
+    end
+  end
+
+  for i, line in ipairs(lines) do
+    lines[i] = line:sub(common_spaces + 1)
+  end
+
+  return table.concat(lines, "\n")
+end
+
+local function clean_name(name)
+  -- Remove quotes
+  if vim.startswith(name, '"""') then
+    name = name:gsub('^"""', ""):gsub('"""$', "")
+  elseif vim.startswith(name, '"') then
+    name = name:gsub('^"', ""):gsub('"$', "")
+  end
+
+  if vim.startswith(name, "\n  ") then
+    name = remove_heredoc_prefix(name:sub(2))
+  end
+
+  -- Replace newlines with spaces
+  return name:gsub("\n", " "):gsub("\\n", " ")
+end
+
 function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
   local match_type = get_match_type(captured_nodes)
   if match_type then
@@ -115,8 +156,6 @@ function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
     if match_type == "dytest" then
       if vim.startswith(name, "~") then
         name = name:sub(4, #name - 1)
-      else
-        name = name:gsub('^"', ""):gsub('"$', "")
       end
       dynamic = true
     end
@@ -124,6 +163,8 @@ function ElixirNeotestAdapter._build_position(file_path, source, captured_nodes)
     if vim.startswith(name, "doctest ") then
       dynamic = true
     end
+
+    name = clean_name(name)
 
     return {
       type = match_type_map[match_type],
@@ -152,17 +193,6 @@ function ElixirNeotestAdapter.discover_positions(path)
     (do_block)
   ) @namespace.definition
 
-  ;; Test blocks (non-dynamic)
-  (call
-    target: (identifier) @_target (#any-of? @_target ]] .. test_block_ids .. [[)
-    (arguments . [
-      (string . (quoted_content) @test.name .) ;; Simple string
-      (sigil . (sigil_name) @_sigil_name . (quoted_content) @test.name .) (#any-of? @_sigil_name "s" "S") ;; Sigil ~s and ~S, no interpolations
-    ]
-    )
-    (do_block)?
-  ) @test.definition
-
   ;; Test blocks (dynamic)
   (call
     target: (identifier) @_target (#any-of? @_target ]] .. test_block_ids .. [[)
@@ -173,6 +203,18 @@ function ElixirNeotestAdapter.discover_positions(path)
     ] @dytest.name)
     (do_block)?
   ) @dytest.definition
+
+  ;; Test blocks (static)
+  (call
+    target: (identifier) @_target (#any-of? @_target ]] .. test_block_ids .. [[)
+    (arguments . [
+      (string . (quoted_content) @test.name .) ;; Simple string
+      (string . (quoted_content) [(escape_sequence) (quoted_content)]+ .) @test.name ;; String with escape sequences
+      (sigil . (sigil_name) @_sigil_name . (quoted_content) @test.name .) (#any-of? @_sigil_name "s" "S") ;; Sigil ~s and ~S, no interpolations
+    ]
+    )
+    (do_block)?
+  ) @test.definition
 
   ;; Doctests
   ;; The word doctest is included in the name to make it easier to notice

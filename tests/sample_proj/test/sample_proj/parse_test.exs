@@ -30,6 +30,23 @@ defmodule SampleProj.ParseTest do
     end
 
     test "without a body"
+
+    test "with a new\nline" do
+      assert SampleProj.hello() == :world
+    end
+
+    test "multiline
+      test" do
+      assert SampleProj.hello() == :world
+    end
+
+    test """
+    multiline
+    heredoc
+    test
+    """ do
+      assert SampleProj.hello() == :world
+    end
   end
 
   describe "dynamic tests" do
@@ -59,6 +76,23 @@ defmodule SampleProj.ParseTest do
       end
 
       test ~s(with the s sigil #{i}) do
+        assert SampleProj.hello() == :world
+      end
+
+      test "with a #{i} new\nline" do
+        assert SampleProj.hello() == :world
+      end
+
+      test "multiline #{i}
+      test" do
+        assert SampleProj.hello() == :world
+      end
+
+      test """
+      multiline
+      heredoc #{i}
+      test
+      """ do
         assert SampleProj.hello() == :world
       end
     end
