@@ -17,6 +17,10 @@ defmodule SampleProj.ParseTest do
       assert SampleProj.hello() == :world
     end
 
+    test "inline test", do: assert(SampleProj.hello() == :world)
+
+    test("inline test with a context", %{}, do: assert(SampleProj.hello() == :world))
+
     test ~s(with the s sigil) do
       assert SampleProj.hello() == :world
     end
@@ -24,6 +28,8 @@ defmodule SampleProj.ParseTest do
     test ~S(with the S sigil) do
       assert SampleProj.hello() == :world
     end
+
+    test "without a body"
   end
 
   describe "dynamic tests" do
@@ -43,6 +49,8 @@ defmodule SampleProj.ParseTest do
       test "#{i}" do
         assert SampleProj.hello() == :world
       end
+
+      test "inline #{i}", do: assert(SampleProj.hello() == :world)
 
       for j <- [:foo, :bar] do
         test "#{i} nested #{j} test" do

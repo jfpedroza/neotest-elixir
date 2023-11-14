@@ -160,7 +160,7 @@ function ElixirNeotestAdapter.discover_positions(path)
       (sigil . (sigil_name) @_sigil_name . (quoted_content) @test.name .) (#any-of? @_sigil_name "s" "S") ;; Sigil ~s and ~S, no interpolations
     ]
     )
-    (do_block)
+    (do_block)?
   ) @test.definition
 
   ;; Test blocks (dynamic)
@@ -171,7 +171,7 @@ function ElixirNeotestAdapter.discover_positions(path)
       (identifier) ;; Single variable as name
       (sigil . (sigil_name) @_sigil_name (interpolation)) (#any-of? @_sigil_name "s") ;; Sigil ~s, with interpolations
     ] @dytest.name)
-    (do_block)
+    (do_block)?
   ) @dytest.definition
 
   ;; Doctests
