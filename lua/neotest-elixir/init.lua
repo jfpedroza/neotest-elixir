@@ -40,12 +40,8 @@ local function post_process_command(cmd)
   return cmd
 end
 
-local function mix_root(file_path)
-  return lib.files.match_root_pattern("mix.exs")(file_path)
-end
-
 local function get_relative_path(file_path)
-  local mix_root_path = mix_root(file_path)
+  local mix_root_path = core.mix_root(file_path)
   local root_elems = vim.split(mix_root_path, Path.path.sep)
   local elems = vim.split(file_path, Path.path.sep)
   return table.concat({ unpack(elems, (#root_elems + 1), #elems) }, Path.path.sep)
@@ -70,7 +66,7 @@ function ElixirNeotestAdapter._generate_id(position, parents)
   end
 end
 
-ElixirNeotestAdapter.root = lib.files.match_root_pattern("mix.exs")
+ElixirNeotestAdapter.root = core.mix_root
 
 function ElixirNeotestAdapter.filter_dir(_, rel_path, _)
   return rel_path == "test"
