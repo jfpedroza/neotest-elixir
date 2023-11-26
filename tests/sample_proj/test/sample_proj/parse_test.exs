@@ -67,6 +67,10 @@ defmodule SampleProj.ParseTest do
         assert SampleProj.hello() == :world
       end
 
+      test "with context #{i}", %{} do
+        assert SampleProj.hello() == :world
+      end
+
       test "inline #{i}", do: assert(SampleProj.hello() == :world)
 
       for j <- [:foo, :bar] do
@@ -101,6 +105,10 @@ defmodule SampleProj.ParseTest do
       test k do
         assert SampleProj.hello() == :world
       end
+    end
+
+    test inspect(&SampleProj.hello/0) do
+      assert SampleProj.hello() == :world
     end
   end
 end

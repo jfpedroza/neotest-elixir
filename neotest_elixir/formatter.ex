@@ -88,8 +88,12 @@ defmodule NeotestElixir.Formatter do
             end
 
           Stream.map(tests, fn test ->
+            test_name = Atom.to_string(test.name)
             # Doctests are handled as dynamic even if it's a single test
-            dynamic? = test.tags.test_type == :doctest or not single_test?
+            dynamic? =
+              test.tags.test_type == :doctest or not single_test? or
+                String.match?(test_name, ~r/&.*\..*\/\d$/)
+
             id = make_id(dynamic?, test)
             output_file = Path.join(config.output_dir, "test_output_#{:erlang.phash2(id)}")
             # The file may exist in some cases (multiple runs with the same output dir)

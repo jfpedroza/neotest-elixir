@@ -199,6 +199,7 @@ function ElixirNeotestAdapter.discover_positions(path)
     (arguments . [
       (string (interpolation)) ;; String with interpolations
       (identifier) ;; Single variable as name
+      (call target: (identifier) @_target2 (#eq? @_target2 "inspect")) ;; Inspect call as name
       (sigil . (sigil_name) @_sigil_name (interpolation)) (#any-of? @_sigil_name "s") ;; Sigil ~s, with interpolations
     ] @dytest.name)
     (do_block)?
