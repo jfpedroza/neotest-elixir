@@ -3,8 +3,21 @@ local Path = require("plenary.path")
 
 local M = {}
 
+function M.mix_root(file_path)
+  local root = lib.files.match_root_pattern("mix.exs")(file_path)
+
+  -- If the path found is inside an umbrella, return the root of the umbrella
+  if root ~= nil and root:match("/apps/[%w_]+$") then
+    local new_root = lib.files.match_root_pattern("mix.exs")(root:gsub("/apps/[%w_]+$", ""))
+
+    return new_root or root
+  end
+
+  return root
+end
+
 local function relative_to_cwd(path)
-  local root = lib.files.match_root_pattern("mix.exs")(path)
+  local root = M.mix_root(path)
   return Path:new(path):make_relative(root)
 end
 
