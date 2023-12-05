@@ -111,4 +111,31 @@ defmodule SampleProj.ParseTest do
       assert SampleProj.hello() == :world
     end
   end
+
+  describe "multiline
+      test" do
+    test "the most basic test" do
+      assert SampleProj.hello() == :world
+    end
+  end
+
+  describe """
+  multiline
+  heredoc
+  test
+  """ do
+    test "the most basic test" do
+      assert SampleProj.hello() == :world
+    end
+  end
+
+  describe "dynamic describe #{5}" do
+    test "static test" do
+      assert SampleProj.hello() == :world
+    end
+
+    test "dynamic test #{7}" do
+      assert SampleProj.hello() == :world
+    end
+  end
 end
