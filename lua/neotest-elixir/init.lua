@@ -54,13 +54,16 @@ function ElixirNeotestAdapter._generate_id(position, parents)
     return (relative_path .. ":" .. line_num)
   else
     return table.concat(
-      vim.tbl_flatten({
+      vim
+      .iter({
         position.path,
         vim.tbl_map(function(pos)
           return pos.name
         end, parents),
         position.name,
-      }),
+      })
+      :flatten()
+      :totable(),
       "::"
     )
   end
@@ -70,10 +73,10 @@ ElixirNeotestAdapter.root = core.mix_root
 
 function ElixirNeotestAdapter.filter_dir(_, rel_path, _)
   return rel_path == "test"
-    or vim.startswith(rel_path, "test/")
-    or rel_path == "apps"
-    or rel_path:match("^apps/[^/]+$")
-    or rel_path:match("^apps/[^/]+/test")
+      or vim.startswith(rel_path, "test/")
+      or rel_path == "apps"
+      or rel_path:match("^apps/[^/]+$")
+      or rel_path:match("^apps/[^/]+/test")
 end
 
 function ElixirNeotestAdapter.is_test_file(file_path)
@@ -175,7 +178,8 @@ end
 ---@async
 ---@return neotest.Tree | nil
 function ElixirNeotestAdapter.discover_positions(path)
-  local test_block_id_list = vim.tbl_flatten({ { "test", "feature", "property" }, get_extra_block_identifiers() })
+  local test_block_id_list =
+      vim.iter({ { "test", "feature", "property" }, get_extra_block_identifiers() }):flatten():totable()
   for index, value in ipairs(test_block_id_list) do
     test_block_id_list[index] = '"' .. value .. '"'
   end
