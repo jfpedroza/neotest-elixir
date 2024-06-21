@@ -87,6 +87,8 @@ local function test_target(position, relative_to)
   if position.type == "test" then
     local line = position.range[1] + 1
     return { relative_path .. ":" .. line }
+  elseif relative_path == "." then
+    return {}
   else
     return { relative_path }
   end
