@@ -36,6 +36,18 @@ local function get_iex_shell_direction()
   return "horizontal"
 end
 
+local function get_test_file_pattern()
+  return "_test.exs$"
+end
+
+local function filter_dir(_, rel_path, _)
+  return rel_path == "test"
+    or vim.startswith(rel_path, "test/")
+    or rel_path == "apps"
+    or rel_path:match("^apps/[^/]+$")
+    or rel_path:match("^apps/[^/]+/test")
+end
+
 local function post_process_command(cmd)
   return cmd
 end
@@ -68,16 +80,12 @@ end
 
 ElixirNeotestAdapter.root = core.mix_root
 
-function ElixirNeotestAdapter.filter_dir(_, rel_path, _)
-  return rel_path == "test"
-    or vim.startswith(rel_path, "test/")
-    or rel_path == "apps"
-    or rel_path:match("^apps/[^/]+$")
-    or rel_path:match("^apps/[^/]+/test")
+function ElixirNeotestAdapter.filter_dir(name, rel_path, root)
+  return filter_dir(name, rel_path, root)
 end
 
 function ElixirNeotestAdapter.is_test_file(file_path)
-  return base.is_test_file(file_path)
+  return base.is_test_file(file_path, get_test_file_pattern())
 end
 
 local function get_match_type(captured_nodes)
@@ -368,6 +376,16 @@ setmetatable(ElixirNeotestAdapter, {
     local write_delay = callable_opt(opts.write_delay)
     if write_delay then
       get_write_delay = write_delay
+    end
+
+    local test_file_pattern = callable_opt(opts.test_file_pattern)
+    if test_file_pattern then
+      get_test_file_pattern = test_file_pattern
+    end
+
+    local filter_dir_fn = callable_opt(opts.filter_dir)
+    if filter_dir_fn then
+      filter_dir = filter_dir_fn
     end
 
     return ElixirNeotestAdapter
