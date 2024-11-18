@@ -35,6 +35,10 @@ defmodule SampleProj.ParseTest do
       assert SampleProj.hello() == :world
     end
 
+    test "with a \"quoted text\"" do
+      assert SampleProj.hello() == :world
+    end
+
     test "multiline
       test" do
       assert SampleProj.hello() == :world
