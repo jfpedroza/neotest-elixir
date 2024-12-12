@@ -84,7 +84,7 @@ local function test_target(position, relative_to)
 
   local relative_path = relative_to(position.path)
 
-  if position.type == "test" then
+  if position.type == "test" or position.type == "namespace" then
     local line = position.range[1] + 1
     return { relative_path .. ":" .. line }
   elseif relative_path == "." then
@@ -124,6 +124,14 @@ local function options_for_task(mix_task)
   end
 end
 
+local function separator_for_task(mix_task)
+  if mix_task == "test.interactive" then
+    return { "--" }
+  else
+    return {}
+  end
+end
+
 function M.build_mix_command(
   position,
   mix_task_func,
@@ -144,6 +152,8 @@ function M.build_mix_command(
       "mix",
       mix_task_func(), -- `test` is default
     },
+    -- test.interactive requires -- to separate its options from mix test options
+    separator_for_task(mix_task_func()),
     -- default is ExUnit.CLIFormatter
     build_formatters(extra_formatters_func()),
     -- default is {}
