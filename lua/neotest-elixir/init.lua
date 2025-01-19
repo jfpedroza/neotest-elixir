@@ -344,7 +344,7 @@ end
 
 setmetatable(ElixirNeotestAdapter, {
   __call = function(_, opts)
-    if opts.post_process_command and type(opts.post_process_command) == "function" then
+    if is_callable(opts.post_process_command) then
       post_process_command = opts.post_process_command
     end
 
@@ -383,9 +383,8 @@ setmetatable(ElixirNeotestAdapter, {
       get_test_file_pattern = test_file_pattern
     end
 
-    local filter_dir_fn = callable_opt(opts.filter_dir)
-    if filter_dir_fn then
-      filter_dir = filter_dir_fn
+    if is_callable(opts.filter_dir) then
+      filter_dir = opts.filter_dir
     end
 
     return ElixirNeotestAdapter
