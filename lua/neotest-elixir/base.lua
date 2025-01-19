@@ -1,7 +1,7 @@
 local M = {}
 
-function M.is_test_file(file_path)
-  return vim.endswith(file_path, "_test.exs")
+function M.is_test_file(file_path, pattern)
+  return file_path:match(pattern)
 end
 
 return M

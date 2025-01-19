@@ -60,6 +60,21 @@ require("neotest").setup({
       -- Can be a function to return a dynamic value.
       -- Default: 1000
       write_delay = 1000,
+      -- The pattern to match test files
+      -- Default: "_test.exs$"
+      test_file_pattern = ".test.exs$",
+      -- Function to determine whether a directory should be ignored
+      -- By default includes root test directory and umbrella apps' test directories
+      -- Params:
+      -- - name (string) - Name of directory
+      -- - rel_path (string) - Path to directory, relative to root
+      -- - root (string) - Root directory of project
+      filter_dir = function(name, rel_path, root)
+        return rel_path == "test"
+            or rel_path == "lib"
+            or vim.startswith(rel_path, 'test/')
+            or vim.startswith(rel_path, 'lib/')
+      end,
     }),
   }
 })
