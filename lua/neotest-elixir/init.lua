@@ -136,7 +136,6 @@ local function clean_name(name)
   -- Replace escaped quotes with literal quotes
   name = name:gsub('\\"', '"')
 
-
   if vim.startswith(name, "\n  ") then
     name = remove_heredoc_prefix(name:sub(2))
   end
