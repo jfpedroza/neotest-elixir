@@ -132,27 +132,30 @@ function M.build_mix_command(
   neotest_args,
   relative_to_func
 )
-  return vim.tbl_flatten({
-    {
-      "elixir",
-    },
-    -- deferent tasks have different options
-    -- for example, `test.interactive` needs to load a custom runner
-    options_for_task(mix_task_func()),
-    {
-      "-S",
-      "mix",
-      mix_task_func(), -- `test` is default
-    },
-    -- default is ExUnit.CLIFormatter
-    build_formatters(extra_formatters_func()),
-    -- default is {}
-    -- maybe `test.interactive` has different args with `test`
-    mix_task_args_func(),
-    neotest_args.extra_args or {},
-    -- test file or directory or testfile:line
-    test_target(position, relative_to_func),
-  })
+  return vim
+    .iter({
+      {
+        "elixir",
+      },
+      -- deferent tasks have different options
+      -- for example, `test.interactive` needs to load a custom runner
+      options_for_task(mix_task_func()),
+      {
+        "-S",
+        "mix",
+        mix_task_func(), -- `test` is default
+      },
+      -- default is ExUnit.CLIFormatter
+      build_formatters(extra_formatters_func()),
+      -- default is {}
+      -- maybe `test.interactive` has different args with `test`
+      mix_task_args_func(),
+      neotest_args.extra_args or {},
+      -- test file or directory or testfile:line
+      test_target(position, relative_to_func),
+    })
+    :flatten()
+    :totable()
 end
 
 -- public only for testing
